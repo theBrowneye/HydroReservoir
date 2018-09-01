@@ -15,6 +15,7 @@ class Timer
 		long interval;
 		long timeout;
 		bool timedOut;
+		bool stopped;
 	private:
 		//functions
 	public:
@@ -23,4 +24,6 @@ class Timer
 		bool timeOut();
 		void startTimer(long t);
 		void restartTimer();
+		void stopTimer();
+		long timeLeft();
 }; //Timer

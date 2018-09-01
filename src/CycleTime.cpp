@@ -24,10 +24,10 @@ void CycleTime::tick()
 	if (t > 0)
 		v = TimeConstant * (float)t + (1 - TimeConstant) * v;
 
-	if (!timeOut())
+	if (!taskTimer.timeOut())
 		return;
 
-	startTimer(1000);
+	taskTimer.startTimer(1000);
 
  	setValueflt(v / 1000.0, 0);
 }

@@ -15,51 +15,54 @@
 // TODO: Add checks for connection drop
 // maybe a 5 minute diagnostic poll that restarts the link if necessary
 // Add some counters for link health
- 
+// TODO: what value to set for mbTimeOut??  Currently it's based on the host poll rate but that doesn't appear right.
+
 #include "Measurement.h"
 #include "ESP8266.h"
 #include <string.h>
 
 #define SSID "happycat"
 #define PASSWORD "23Mort$treet"
-const uint16_t bufferSize = 256;
-const long mbTimeOut = 45000;
-
-enum class ModState {
-    t1, t2, t3, t4, 
-    s1, s2
-};
+const int16_t bufferSize = 256;
+const long msgTimeOut = 5l * 1000l;         // 5 seconds to complete a message cycle
+const long diagTimeOut = 5l * 60l * 1000l; // 5 minutes to check connection and restart if necessary
 
 class ModbusDevice : public Measurement
 {
-  public:
-    ModbusDevice(HardwareSerial &s);
-    void begin();
-    void tick();
-    void reset();
-    void restart();
+public:
+  ModbusDevice(HardwareSerial &s);
+  void begin();
+  void tick();
+  void reset();
+  void restart();
+  void connect();
 
-  protected:
-    HardwareSerial &sd;
-    ESP8266 wifi;
-    uint8_t rbuffer[bufferSize];
-    uint8_t sbuffer[bufferSize];
-    uint16_t sbufflen;
-    uint16_t rbufflen;
+protected:
+  HardwareSerial &sd;
+  ESP8266 wifi;
+  uint8_t rbuffer[bufferSize];
+  uint8_t sbuffer[bufferSize];
+  int16_t sbufflen;
+  int16_t rbufflen;
+  int16_t len;
+  enum
+  {
+    hardFail = -2, softFail = -1,
+    idle = 0,
+    t1, t2, t3,
+    s1, s2
+  } state;
+  
+  uint8_t mb_fc;  // modbus function code
+  int16_t mb_ref; // modbus reference
+  int16_t mb_cnt; // modbus size
+  int8_t mux;     // tcp stream mux
 
-    unsigned int len;
-    ModState state;
+  int memstrn(const char *needle);
+  int memrem(int n);
+  int memtoi(int n);
 
-    uint8_t mb_fc;   // modbus function code
-    int16_t mb_ref;  // modbus reference
-    uint16_t mb_cnt; // modbus size
-    uint8_t mux;     // tcp stream mux
-
-    int memstrn(char *needle);
-    int memrem(int n);
-    int memtoi(int n);
-
-    uint16_t callsTotal;
-    uint16_t callsError;
+  uint16_t callsTotal;
+  uint16_t callsError;
+  uint16_t callsConnect;
 };
-

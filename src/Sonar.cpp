@@ -11,7 +11,7 @@ Sonar::Sonar(byte trigger, byte pulse, int maxDst) : m_s(trigger, pulse, maxDst)
 
 void Sonar::tick()
 {
-    if (!timeOut())
+    if (!taskTimer.timeOut())
         return;
         
     // TODO: implement water temperature readings
@@ -37,5 +37,5 @@ void Sonar::tick()
     setValueflt(filter, 2);
 
     // reschedule timer
-    startTimer(ReadDelay);
+    taskTimer.startTimer(ReadDelay);
 }

@@ -13,29 +13,51 @@
 #include "Timer.h"
 #include "dbx.h"
 
-class Measurement : public Timer
+class Measurement
 {
   public:
-    Measurement() 
+    Measurement()
     {
         bPtr = hreg;
+        state = Measurement::idle;
     };
-    void tick(){};
+    void tick();
     void setValuePtr(uint16_t b)
     {
         base = b;
     };
-
-  protected:
-    void setValueflt(float f, uint16_t offset) 
+    void setValueflt(float f, uint16_t offset)
     {
-        float * p = reinterpret_cast<float *>(hreg + base + offset);
+        float *p = reinterpret_cast<float *>(bPtr + base + offset);
         *p = f;
     };
     void setValueInt(uint16_t f, uint16_t offset)
     {
-        *(hreg + base + offset) = f;
+        *(bPtr + base + offset) = f;
     };
-    uint16_t base;
-    uint16_t *bPtr;
+    bool isFailed() 
+    {
+        return state < 0;
+    };
+    bool isIdle()
+    {
+        return state == 0;
+    }
+    bool isBusy()
+    {
+        return state > 0;
+    }
+
+  protected:
+    uint16_t base;  // register offset for this object
+    uint16_t *bPtr; // pointer to memory map
+    Timer taskTimer;
+    Timer diagTimer;
+    enum
+    {
+        hardFail = -2,
+        softFail = -1,
+        idle = 0,
+        busy = 1
+    } state;
 };

@@ -11,6 +11,7 @@
 Timer::Timer()
 {
 	timedOut = true;
+	stopped = false;
 	interval = timeout = 0;
 } //Timer
 
@@ -23,20 +24,34 @@ void Timer::startTimer(long t)
 {
 	interval = t;
 	timeout = millis() + t;
-	timedOut = false;
+	stopped = timedOut = false;
 }
 
 bool Timer::timeOut()
 {
+	if (stopped)
+		return false;
 	if (timedOut)
 		return true;
 	return timedOut = (((long)millis() - timeout) >= 0);
 }
 
+long Timer::timeLeft()
+{
+	return (long)millis() - timeout;
+}
+
 // set timer to next interval after now
 void Timer::restartTimer()
 {
-	timedOut = false;
+	stopped = timedOut = false;
 	while (timeOut())
 		timeout += interval;
+}
+
+// stop the timer
+void Timer::stopTimer()
+{
+	stopped = true;
+	timedOut = false;
 }

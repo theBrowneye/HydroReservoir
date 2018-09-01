@@ -21,7 +21,7 @@ OneTemperature::OneTemperature(uint8_t id) : ds(id)
 void OneTemperature::tick()
 {
 
-    if (!timeOut())
+    if (!taskTimer.timeOut())
         return;
 
     if (state == init)
@@ -32,14 +32,14 @@ void OneTemperature::tick()
             ds.reset_search();
             delay(CommandDelay);
             // pValue->updateBad();
-            startTimer(FailedDelay);
+            taskTimer.startTimer(FailedDelay);
             return;
         }
 
         if (OneWire::crc8(addr, 7) != addr[7])
         {
             // pValue->updateBad();
-            startTimer(FailedDelay);
+            taskTimer.startTimer(FailedDelay);
             return;
         }
 
@@ -65,7 +65,7 @@ void OneTemperature::tick()
         ds.select(addr);
         ds.write(0x44, 1); // start conversion, with parasite power on at the end
 
-        startTimer(ReadDelay); // maybe 750ms is enough, maybe not
+        taskTimer.startTimer(ReadDelay); // maybe 750ms is enough, maybe not
         // we might do a ds.depower() here, but the reset will take care of it.
         state = write;
         return;
@@ -109,12 +109,12 @@ void OneTemperature::tick()
         if (v > MaxLow && v < MaxHigh)
         {
             setValueflt((float)raw / 16.0, 0);
-            startTimer(CommandDelay);
+            taskTimer.startTimer(CommandDelay);
         }
         else
         {
             // pValue->updateBad();
-            startTimer(FailedDelay);
+            taskTimer.startTimer(FailedDelay);
         }
         state = read;
         return;

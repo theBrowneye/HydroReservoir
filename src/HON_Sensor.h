@@ -14,7 +14,6 @@ public:
   HONSensor(byte id);
   void tick();
   void begin();
-  bool isBusy();
 
 private:
   byte honID;
@@ -22,7 +21,9 @@ private:
   float temperature;
   enum
   {
-    command,
-    read
+    hardFail = -2,
+    softFail = -1,
+    idle = 0,
+    read = 1
   } state;
 };

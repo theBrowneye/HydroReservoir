@@ -12,14 +12,6 @@
 * 2018-08-14 Copied to new project
 */
 
-// Useful links
-// http://www.nongnu.org/avr-libc/user-manual/pages.html
-// https://www.pjrc.com/teensy/td_libs.html
-// http://arduino.cc/
-// http://www.atmel.com/products/microcontrollers/avr/megaAVR.aspx
-
-// TODO: implement new UI
-
 // defines for include files
 #define U8X8_HAVE_HW_I2C
 
@@ -35,7 +27,6 @@
 #include "ErrorStatus.h"
 #include "CycleTime.h"
 #include "RunTime.h"
-// #include "Modbus.h"
 #include "U8x8lib.h"
 #include "Sonar.h"
 #include "dbxMemoryMap.h"
@@ -96,11 +87,9 @@ ECSensor ec_sensor(ecSerial);
 Encoder enc(encPinA, encPinB);
 Bounce encBtn;
 HONSensor hon_sensor(honID);
-// Modbus modbus_slave(mbSerial, mbDE, mbRE, 9600);
 CycleTime cycleTime;
 RunTime runTime;
 Timer menu_timer;
-// U8X8_SSD1306_128X32_UNIVISION_HW_I2C u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
 U8X8_SSD1306_128X64_ALT0_HW_I2C  u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
 Sonar ms(dstTrig, dstEcho, dstMaxDistance);
 ModbusDevice mb(mbSerial);
@@ -115,6 +104,7 @@ void setup()
 	// process restart
 	parse_restart_flags();
 
+	// TODO: change ms back to use watertemperature
 	// set up instrument readings
 	water_temperature.setValuePtr(dbWatTemp);
 	case_temperature.setValuePtr(dbCaseTemp);
@@ -122,7 +112,6 @@ void setup()
 	ec_sensor.setValuePtr(dbECSensor);
 	hon_sensor.setValuePtr(dbHonSensor);
 	hon_sensor.begin();
-	// TODO: change ms back to use watertemperature
 	ms.setValuePtr(dbSonar);
 	cycleTime.setValuePtr(dbCycleTime);
 	runTime.setValuePtr(dbRunTime);
@@ -178,12 +167,23 @@ void loop()
 	// mm.saveToFlash();
 }
 
+int freeRam()
+{
+	extern int __heap_start, *__brkval;
+	int v;
+	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
+}
+
 // process menu and displays
 void Menu_Show()
 {
 	u8x8.setCursor(0, 0);
 	u8x8.print(regmap.getValueInt(27));
-	u8x8.print("  ");
+	u8x8.print(",");
+	u8x8.print(regmap.getValueInt(29));
+	u8x8.print(",");
+	u8x8.print(regmap.getValueInt(28));
+
 
 	u8x8.setCursor(0, 1);
 	u8x8.print("out t: ");
@@ -191,8 +191,8 @@ void Menu_Show()
 	u8x8.print("  ");
 
 	u8x8.setCursor(0, 2);
-	u8x8.print("out h: ");
-	u8x8.print(regmap.getValueFlt(11), 0);
+	u8x8.print("ram: ");
+	u8x8.print(freeRam());
 	u8x8.print("  ");
 
 	u8x8.setCursor(0, 3);

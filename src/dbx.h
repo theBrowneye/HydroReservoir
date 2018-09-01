@@ -6,7 +6,8 @@
 #include "string.h"
 
 // TODO: makes sure all types are behind typedefs
-const int dbxMemorySize = 27;
+// TODO: Work out how to automatically update this item from the memory map configuration
+const uint16_t dbxMemorySize = 31;      // make sure this is correct
 
 // define the register structure that holds the data
 class dbxRegisters
@@ -23,10 +24,11 @@ class dbxRegisters
 	};
 };
 
-extern dbxRegisters& regmap;
-
 typedef uint16_t dbxScreenSet;
 typedef uint16_t *dbxMemPtr;
+
+extern dbxRegisters& regmap;
+extern dbxMemPtr hreg;
 
 // define the memory map
 class dbxMemMap
@@ -37,7 +39,7 @@ class dbxMemMap
 	static const uint8_t t32 = 2 << 6 & 2;
 	static const uint8_t tflt0 = 3 << 6 & 2;
 	static const uint8_t tflt1 = 3 << 6 & 1 << 4 & 2;
-	static const uint8_t tflt2 = 3 << 6 & 2 << 4 & 2;
+	static const uint8_t tflt2 = 3 << 6 & 2 << 4 & 2; 
 
   public:
 	uint16_t offset;

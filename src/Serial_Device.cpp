@@ -141,7 +141,7 @@ void PHSensor::tick()
 		state = read;
 		slen = 0;
 		sensor_string_complete = false;
-		startTimer(SerialTimeOut);
+		taskTimer.startTimer(SerialTimeOut);
 
 		// in passthrough mode, just send anything received from serial in
 	}
@@ -190,7 +190,7 @@ void PHSensor::tick()
 			state = write;
 		}
 		// if timeout on getting a complete string
-		if (timeOut())
+		if (taskTimer.timeOut())
 		{
 			// pValue->updateBad();
 			state = write;
@@ -317,7 +317,7 @@ void ECSensor::tick()
 		state = read;
 		slen = 0;
 		sensor_string_complete = false;
-		startTimer(SerialTimeOut);
+		taskTimer.startTimer(SerialTimeOut);
 	}
 	else if (state == passthrough)
 	{
@@ -364,7 +364,7 @@ void ECSensor::tick()
 		}
 
 		// if timeout on getting a complete string
-		if (timeOut())
+		if (taskTimer.timeOut())
 		{
 			// pValue->updateBad();
 			state = write;

@@ -1,8 +1,5 @@
 #include "dbx.h"
 
-uint16_t reg[dbxMemorySize];
-dbxMemPtr hreg = reg;
-
 float dbxRegisters::getValueFlt(uint16_t offset)
 {
     float *p = reinterpret_cast<float *>(hreg + offset);
@@ -15,6 +12,7 @@ uint16_t dbxRegisters::getValueInt(uint16_t offset)
 }
 
 dbxRegisters& regmap = dbxRegisters::getInstance();
+dbxMemPtr hreg = regmap.reg;
 
 dbxMenu::dbxMenu() 
 {

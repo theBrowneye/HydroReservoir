@@ -2,11 +2,20 @@
 
 ModbusDevice::ModbusDevice(HardwareSerial &s) : sd(s), wifi(s, 9600)
 {
-    reset();
 }
 
-// establish communications to access point
 void ModbusDevice::begin()
+{
+    callsConnect = callsError = callsTotal = 0;
+    setValueInt(callsTotal, 0);
+    setValueInt(callsError, 1);
+    setValueInt(callsConnect, 2);
+    state = ModbusDevice::idle;
+}
+
+// TODO: implement error checking
+// establish communications to access point
+void ModbusDevice::connect()
 {
     Serial.println("ModbusDevice::begin start");
 
@@ -63,31 +72,35 @@ void ModbusDevice::begin()
 
 void ModbusDevice::reset()
 {
-    len = rbufflen = sbufflen = 0;
-    state = ModState::t1;
-    startTimer(mbTimeOut);
+    setValueInt(++callsError, 1);
     Serial.println("reset()");
-    callsTotal = callsError = 0;
+    restart();
 }
 
 void ModbusDevice::restart()
 {
     rbufflen = 0;
-    state = ModState::t1;
-    startTimer(mbTimeOut);
-    setValueInt(++callsTotal, 0);
-    // Serial.println("restart()");
+    state = ModbusDevice::idle;
+    diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
+    taskTimer.stopTimer();                  // turn off task timer until we get a start segment
 }
 
 // process modem messages
 void ModbusDevice::tick()
 {
-    int rf, rc;
+    if (diagTimer.timeOut())
+    {
+        diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
+        setValueInt(++callsConnect, 2);
+        connect();                              // try to connect
+    }
 
-    if (timeOut()) reset();
+    if (isBusy() && taskTimer.timeOut())
+        reset();
 
     // prevent buffer from growing too large
-    if (rbufflen >= bufferSize) reset(); 
+    if (rbufflen >= bufferSize)
+        reset();
 
     // read any incoming data
     bool b = false;
@@ -97,44 +110,46 @@ void ModbusDevice::tick()
         rbuffer[rbufflen++] = c;
         b = true;
     }
-    if (!b) return;
+    if (!b)
+        return;
 
     // +IPD,id,len:data
     // look for a response header
     int l = rbufflen;
-    if (state == ModState::t1 && rbufflen >= 5)
+    if (isIdle() && rbufflen >= 5)
     {
         l = memstrn("+IPD,");
         if (l > 0)
         {
-            memrem(l+5); // strip leading portion
-            state = ModState::t2;
+            memrem(l + 5); // strip leading portion
+            taskTimer.startTimer(msgTimeOut);        // set message timeout
+            state = ModbusDevice::t1;
         }
-    } 
+    }
 
-    if (state == ModState::t2 && rbufflen >= 2)
+    if (state == ModbusDevice::t1 && rbufflen >= 2)
     {
         l = memstrn(",");
         if (l > 0)
         {
             mux = memtoi(l);
-            memrem(l+1);
-            state = ModState::t3;
+            memrem(l + 1);
+            state = ModbusDevice::t2;
         }
     }
 
-    if (state == ModState::t3 && rbufflen > 2)
+    if (state == ModbusDevice::t2 && rbufflen > 2)
     {
         l = memstrn(":");
         if (l > 0)
         {
             len = memtoi(l);
-            memrem(l+1);
-            state = ModState::t4;
+            memrem(l + 1);
+            state = ModbusDevice::t3;
         }
     }
 
-    if (state == ModState::t4 && rbufflen >= len)
+    if (state == ModbusDevice::t3 && rbufflen >= len)
     {
         bool rsend = false;
 
@@ -153,28 +168,32 @@ void ModbusDevice::tick()
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 03 ! byt! val! val!
             case 3:
                 mb_cnt = static_cast<uint8_t>(rbuffer[10]) * 256 + static_cast<uint8_t>(rbuffer[11]);
-                rc = mb_cnt;
-                rf = mb_ref;
                 for (int i = 0; i < 12; i++)
                     sbuffer[i] = rbuffer[i];
                 sbuffer[5] = 3 + mb_cnt * 2; // length
                 sbuffer[8] = mb_cnt * 2;     // number of value bytes
-                sbufflen = 9 + mb_cnt * 2;       // length of out buffer
+                sbufflen = 9 + mb_cnt * 2;   // length of out buffer
 
                 union {
                     uint16_t i;
-                    uint8_t  b[2];
+                    uint8_t b[2];
                 } uu;
-                for (int i = 0; i < mb_cnt; i++)
+                for (auto i = 0; i < mb_cnt; i++)
                 {
                     uu.i = bPtr[i + mb_ref];
                     sbuffer[9 + i * 2] = uu.b[0];
-                    sbuffer[10 + i* 2] = uu.b[1];
+                    sbuffer[10 + i * 2] = uu.b[1];
                 }
 
                 rsend = true;
 
-                Serial.print("MODBUS:"); Serial.print(mb_fc); Serial.print(",R:"); Serial.print(rf); Serial.print(",C:"); Serial.println(rc);
+                // Serial.print("MODBUS:");
+                // Serial.print(mb_fc);
+                // Serial.print(",R:");
+                // Serial.print(rf);
+                // Serial.print(",C:");
+                // Serial.println(rc);
+                Serial.print('.');
                 break;
 
             // FC16 - write multiple registers
@@ -213,54 +232,59 @@ void ModbusDevice::tick()
             // send response
             // bool ESP8266::send(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
         }
-        if (rsend)  {
-            state = ModState::s1;
-        } else {
+        if (rsend)
+        {
+            state = ModbusDevice::s1;
+        }
+        else
+        {
             reset();
         }
     }
-    
-    if (state == ModState::s1)
+
+    if (state == ModbusDevice::s1)
     {
         sd.print("AT+CIPSEND=");
         sd.print(mux);
         sd.print(",");
         sd.println(sbufflen);
         rbufflen = 0;
-        state = ModState::s2;
+        state = ModbusDevice::s2;
     }
 
-    if (state == ModState::s2 && rbufflen > 22)
+    if (state == ModbusDevice::s2 && rbufflen > 22)
     {
         l = memstrn(">");
         if (l > 0)
         {
             sd.write(sbuffer, sbufflen);
+            setValueInt(callsTotal++, 0);
             restart();
         }
     }
 }
 
-int ModbusDevice::memstrn(char *needle)
+int ModbusDevice::memstrn(const char *needle)
 {
-	uint8_t *p;
-	uint16_t needlesize = strlen(needle);
+    uint8_t *p;
+    uint16_t needlesize = strlen(needle);
 
-	for (p = rbuffer; p <= (rbuffer-needlesize+rbufflen); p++)
-	{
-		if (memcmp(p, needle, needlesize) == 0)
-			return p - rbuffer; /* found */
-	}
-	return -1;
+    for (p = rbuffer; p <= (rbuffer - needlesize + rbufflen); p++)
+    {
+        if (memcmp(p, needle, needlesize) == 0)
+            return p - rbuffer; /* found */
+    }
+    return -1;
 }
 
 int ModbusDevice::memrem(int n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     n = min(rbufflen, n);
 
     for (int i = 0; i < rbufflen - n; i++)
-        rbuffer[i] = rbuffer[i+n];
+        rbuffer[i] = rbuffer[i + n];
     rbufflen -= n;
     return n;
 }
@@ -268,7 +292,7 @@ int ModbusDevice::memrem(int n)
 int ModbusDevice::memtoi(int n)
 {
     int retval = 0;
-    for (int i = 0; i < n; i++) 
-        retval = retval * 10 + rbuffer[i]-'0';
+    for (int i = 0; i < n; i++)
+        retval = retval * 10 + rbuffer[i] - '0';
     return retval;
 }

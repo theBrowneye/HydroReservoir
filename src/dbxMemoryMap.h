@@ -14,6 +14,7 @@ const uint16_t dbRunTime = 25;
 const uint16_t dbModBus = 27;
 
 dbxMemMap mem[] = {
+    /* empty */ {0, 0, "start"},
     /* 40001 */ {dbSonar + 0, dbxMemMap::tflt0, "tank level - raw"},
     /* 40003 */ {dbSonar + 2, dbxMemMap::tflt0, "tank level - filt"},
     /* 40005 */ {dbSonar + 3, dbxMemMap::tflt2, "sonar span"},
@@ -31,13 +32,7 @@ dbxMemMap mem[] = {
     /* 40025 */ {25, dbxMemMap::t16, "run time"},
     /* 40026 */ {26, dbxMemMap::t8, "testy"},
     /* 40027 */ {dbModBus + 0, dbxMemMap::t16, "modbus calls"},
-    /* 40028 */ {dbModBus + 1, dbxMemMap::t16, "modbus errors"}
+    /* 40028 */ {dbModBus + 1, dbxMemMap::t16, "modbus errors"},
+    /* 40029 */ {dbModBus + 2, dbxMemMap::t16, "num connects"},
+    /* 40030 */ {0, 0, "end"}
 };
-
-// screensets
-/// first number is the count of screen set items (not including the count)
-dbxScreenSet ss1[] = {5, 15, 17, 3, 9, 11};
-
-// const int dbSonar = 0;
-// sonar.reg_memory(dbSonar + 0, dbxMemMap::tflt0, "tank level - raw");
-// sonar.reg_memory(dbSonar + 2, dbxMemMap::tflt2, "tank level - filt");

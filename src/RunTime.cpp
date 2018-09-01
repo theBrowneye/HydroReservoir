@@ -20,11 +20,11 @@ void RunTime::tick()
 {
 
 	// throttle update
-	if (!timeOut())
+	if (!taskTimer.timeOut())
 		return;
 
 	// calculate runtime in days
-	startTimer(60000); // update every minute
+	taskTimer.startTimer(60000); // update every minute
 	unsigned long v = now() - runtime;
 
 	setValueflt((float)v / (float)SECS_PER_DAY, 0);

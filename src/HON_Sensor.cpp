@@ -17,12 +17,7 @@ const int UpdateDelay = 1000; // throttle update rate so LCD doesn't jitter
 HONSensor::HONSensor(byte id)
 {
     honID = id;
-    state = command;
-}
-
-bool HONSensor::isBusy()
-{
-    return state == read;
+    state = idle;
 }
 
 void HONSensor::begin()
@@ -32,15 +27,15 @@ void HONSensor::begin()
 
 void HONSensor::tick()
 {
-    if (!timeOut())
+    if (!taskTimer.timeOut())
         return;
 
-    if (state == command)
+    if (state == idle)
     {
 
         Wire.beginTransmission(honID);
         Wire.endTransmission();
-        startTimer(CommandDelay);
+        taskTimer.startTimer(CommandDelay);
         state = read;
         return;
     }
@@ -62,7 +57,7 @@ void HONSensor::tick()
             temperature = temperature / 16382 * 165 - 40;
             setValueflt(temperature, 0);
             setValueflt(humidity, 2);
-            startTimer(UpdateDelay);
+            taskTimer.startTimer(UpdateDelay);
             Error.HON_error = false;
             // if (DEBUG_HON)
             //     Serial.println("HON:good");
@@ -71,11 +66,11 @@ void HONSensor::tick()
         {
             // pValue->updateBad(temperature);
             // pValue2->updateBad(humidity);
-            startTimer(ErrorDelay);
+            taskTimer.startTimer(ErrorDelay);
             Error.HON_error = true;
             // if (DEBUG_HON)
             //     Serial.println("HON:bad");
         }
-        state = command;
+        state = idle;
     }
 }
