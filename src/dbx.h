@@ -7,7 +7,7 @@
 
 // TODO: makes sure all types are behind typedefs
 // TODO: Work out how to automatically update this item from the memory map configuration
-const uint16_t dbxMemorySize = 31;      // make sure this is correct
+const uint16_t dbxMemorySize = 30;      // make sure this is correct
 
 // define the register structure that holds the data
 class dbxRegisters

@@ -77,7 +77,7 @@ void parse_restart_flags()
 }
 
 // declarations
-void Menu_Show();
+void Menu_Show(int, bool);
 
 // create objects
 OneTemperature water_temperature(wtrTemp);
@@ -156,7 +156,7 @@ void loop()
 	// display menus
 	if (menu_timer.timeOut())
 	{
-		Menu_Show();
+		Menu_Show(enc.getMenu(), encBtn.read());
 		menu_timer.startTimer(MenuTimeOut);
 	}
 
@@ -167,38 +167,130 @@ void loop()
 	// mm.saveToFlash();
 }
 
-int freeRam()
-{
-	extern int __heap_start, *__brkval;
-	int v;
-	return (int)&v - (__brkval == 0 ? (int)&__heap_start : (int)__brkval);
-}
-
 // process menu and displays
-void Menu_Show()
+void Menu_Show(int menuPos, bool b)
 {
-	u8x8.setCursor(0, 0);
-	u8x8.print(regmap.getValueInt(27));
-	u8x8.print(",");
-	u8x8.print(regmap.getValueInt(29));
-	u8x8.print(",");
-	u8x8.print(regmap.getValueInt(28));
+	bool action = !b;
+	static int lastMenu = -1;
+	if (lastMenu != menuPos)
+	{
+		lastMenu = menuPos;
+		u8x8.clear();
+	}
+
+	switch (menuPos)
+	{
+		case 0:
+			u8x8.setCursor(0, 0);
+			u8x8.print("Water Quality");
+
+			u8x8.setCursor(0, 1);
+			u8x8.print("  ph:");
+			u8x8.print(regmap.getValueFlt(dbPHSensor),1);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 2);
+			u8x8.print("  ec:");
+			u8x8.print(regmap.getValueFlt(dbECSensor),0);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 3);
+			u8x8.print(" lvl:");
+			u8x8.print(regmap.getValueFlt(dbSonar+2),0);
+			u8x8.print("  ");
+			break;
+
+		case 1:
+			u8x8.setCursor(0, 0);
+			u8x8.print("Modem");
+
+			u8x8.setCursor(0, 1);
+			u8x8.print("call:");
+			u8x8.print(regmap.getValueInt(dbModBus));
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 2);
+			u8x8.print("cnct:");
+			u8x8.print(regmap.getValueInt(dbModBus+1));
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 3);
+			u8x8.print("errs:");
+			u8x8.print(regmap.getValueInt(dbModBus+2));
+			u8x8.print("  ");
+			break;
+
+		case 2:
+			u8x8.setCursor(0, 0);
+			u8x8.print("Environment");
+
+			u8x8.setCursor(0, 1);
+			u8x8.print("temp:");
+			u8x8.print(regmap.getValueFlt(dbHonSensor),1);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 2);
+			u8x8.print(" hum:");
+			u8x8.print(regmap.getValueFlt(dbHonSensor+2),0);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 3);
+			u8x8.print("case:");
+			u8x8.print(regmap.getValueFlt(dbCaseTemp),1);
+			u8x8.print("  ");
+			break;
+
+		case 3:
+			u8x8.setCursor(0, 0);
+			u8x8.print("Sonar");
+
+			u8x8.setCursor(0, 1);
+			u8x8.print("raw:");
+			u8x8.print(regmap.getValueFlt(dbSonar),0);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 2);
+			u8x8.print("span:");
+			u8x8.print(regmap.getValueFlt(dbSonar+4),0);
+			u8x8.print("  ");
+
+			u8x8.setCursor(0, 3);
+			u8x8.print(" off:");
+			u8x8.print(regmap.getValueFlt(dbSonar+6),0);
+			u8x8.print("  ");
+			break;
+
+		// case 4:
+		// 	u8x8.setCursor(0, 0);
+		// 	u8x8.print("System");
+
+		// 	u8x8.setCursor(0, 1);
+		// 	u8x8.print("flag:");
+		// 	u8x8.print(regmap.getValueInt(23), HEX);
+		// 	u8x8.print("  ");
+
+		// 	u8x8.setCursor(0, 2);
+		// 	u8x8.print("cycl:");
+		// 	u8x8.print(regmap.getValueInt(24));
+		// 	u8x8.print("  ");
+
+		// 	u8x8.setCursor(0, 3);
+		// 	u8x8.print(" run:");
+		// 	u8x8.print(regmap.getValueInt(25));
+		// 	u8x8.print("  ");
+		// 	break;
+
+		default:
+			u8x8.setCursor(0, 0);
+			u8x8.print("Unknown");
+
+	}
 
 
-	u8x8.setCursor(0, 1);
-	u8x8.print("out t: ");
-	u8x8.print(regmap.getValueFlt(9), 1);
-	u8x8.print("  ");
-
-	u8x8.setCursor(0, 2);
-	u8x8.print("ram: ");
-	u8x8.print(freeRam());
-	u8x8.print("  ");
-
-	u8x8.setCursor(0, 3);
-	u8x8.print("level: ");
-	u8x8.print(regmap.getValueFlt(3), 0);
-	u8x8.print("  ");
+	// u8x8.setCursor(0, 1);
+	// u8x8.print("out t: ");
+	// u8x8.print(regmap.getValueFlt(9), 1);
+	// u8x8.print("  ");
 
 	// Serial.print("sonar: ");
 	// Serial.println(regmap.getValueFlt(3));
