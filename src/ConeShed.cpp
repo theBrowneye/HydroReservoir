@@ -33,47 +33,54 @@
 #include "Bounce2.h"
 #include "ModbusESP8266AT.h"
 
-
 // manage wdt
-uint8_t mcusr_mirror __attribute__((section(".noinit")));
 uint8_t avr_restarts __attribute__((section(".noinit")));
+uint8_t int_restarts __attribute__((section(".noinit")));
 
-void get_mcusr(void) __attribute__((naked)) __attribute__((section(".init3")));
-
-void get_mcusr(void)
+// install catchall isr
+// send "!" to serial port
+ISR(BADISR_vect)
 {
-	mcusr_mirror = MCUSR;
-	MCUSR = 0;
-	wdt_disable();
+	int_restarts++;
+	for (;;)
+		UDR0 = '!';
 }
 
 void parse_restart_flags()
 {
+	uint8_t mcusr_mirror = MCUSR;
+	Serial.print("Restart reason: [");
 	if (mcusr_mirror & _BV(PORF))
-	{									 // test for power-on restart
-		mcusr_mirror = avr_restarts = 0; // reset restart counter
-		Serial.println("Restart reason: Power On");
-	}
-	else
 	{
-		Error.restarts = ++avr_restarts;
-		Serial.print("Restart reason: [");
-		if (mcusr_mirror & _BV(JTRF))
-			Serial.print("JTRF ");
-		if (mcusr_mirror & _BV(WDRF))
-			Serial.print("WDRF ");
-		if (mcusr_mirror & _BV(BORF))
-			Serial.print("BORF ");
-		if (mcusr_mirror & _BV(EXTRF))
-			Serial.print("EXTRF ");
-		Serial.print(mcusr_mirror, HEX);
-		Serial.println("]");
+		Serial.print("PORF ");
+		avr_restarts = 0; // reset restart counter
 	}
-
-	Error.jtrf = mcusr_mirror & _BV(JTRF);
-	Error.wdrf = mcusr_mirror & _BV(WDRF);
-	Error.borf = mcusr_mirror & _BV(BORF);
-	Error.extrf = mcusr_mirror & _BV(EXTRF);
+	Error.restarts = ++avr_restarts;
+	if (mcusr_mirror & _BV(JTRF))
+	{
+		Serial.print("JTRF ");
+		Error.jtrf = mcusr_mirror & _BV(JTRF);
+	}
+	if (mcusr_mirror & _BV(WDRF))
+	{
+		Serial.print("WDRF ");
+		Error.wdrf = mcusr_mirror & _BV(WDRF);
+	}
+	if (mcusr_mirror & _BV(BORF))
+	{
+		Serial.print("BORF ");
+		Error.borf = mcusr_mirror & _BV(BORF);
+	}
+	if (mcusr_mirror & _BV(EXTRF))
+	{
+		Serial.print("EXTRF ");
+		Error.extrf = mcusr_mirror & _BV(EXTRF);
+	}
+	Serial.print(mcusr_mirror, HEX);
+	Serial.println("]");
+	Serial.print("starts: ");
+	Serial.println(Error.restarts);
+	MCUSR = 0;
 }
 
 // declarations
@@ -90,7 +97,7 @@ HONSensor hon_sensor(honID);
 CycleTime cycleTime;
 RunTime runTime;
 Timer menu_timer;
-U8X8_SSD1306_128X64_ALT0_HW_I2C  u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
+U8X8_SSD1306_128X64_ALT0_HW_I2C u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
 Sonar ms(dstTrig, dstEcho, dstMaxDistance);
 ModbusDevice mb(mbSerial);
 
@@ -98,12 +105,14 @@ ModbusDevice mb(mbSerial);
 void setup()
 {
 	// initialize the digital pin as an output.
+	wdt_disable();
 	Serial.begin(115200);
-	LogError("Starting");
 
 	// process restart
 	parse_restart_flags();
+	wdt_disable();
 
+	// TODO: impelement WDT counters
 	// TODO: change ms back to use watertemperature
 	// set up instrument readings
 	water_temperature.setValuePtr(dbWatTemp);
@@ -116,7 +125,7 @@ void setup()
 	cycleTime.setValuePtr(dbCycleTime);
 	runTime.setValuePtr(dbRunTime);
 	encBtn.attach(encButton, INPUT_PULLUP);
-	encBtn.interval(25);		// debounce interval
+	encBtn.interval(25); // debounce interval
 	u8x8.begin();
 
 	// restore saved information
@@ -124,29 +133,29 @@ void setup()
 
 	// set up UI objects
 	enc.begin();
-	enc.setMenuRange(15);		// TODO: remove this after testing
+	enc.setMenuRange(15); // TODO: remove this after testing
 	u8x8.setFont(u8x8_font_amstrad_cpc_extended_f);
 	u8x8.clear();
 
 	// set up modbus slave
-	mb.setValuePtr(dbModBus);
+ 	mb.setValuePtr(dbModBus);
 	mb.begin();
 
 	// set up watchdog timer
-	wdt_enable(WDTO_8S);
+	//wdt_enable(WDTO_8S);
 }
 
 // the loop routine runs over and over again forever:
 void loop()
 {
 	// reset watchdog
-	wdt_reset();
+	//wdt_reset();
 
 	// tick each measurement
 	case_temperature.tick();
 	water_temperature.tick();
-	ph_sensor.tick();
-	ec_sensor.tick();
+	// ph_sensor.tick();
+	// ec_sensor.tick();
 	hon_sensor.tick();
 	cycleTime.tick();
 	runTime.tick();
@@ -180,85 +189,85 @@ void Menu_Show(int menuPos, bool b)
 
 	switch (menuPos)
 	{
-		case 0:
-			u8x8.setCursor(0, 0);
-			u8x8.print("Water Quality");
+	case 0:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Water Quality");
 
-			u8x8.setCursor(0, 1);
-			u8x8.print("  ph:");
-			u8x8.print(regmap.getValueFlt(dbPHSensor),1);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 1);
+		u8x8.print("  ph:");
+		u8x8.print(regmap.getValueFlt(dbPHSensor), 1);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 2);
-			u8x8.print("  ec:");
-			u8x8.print(regmap.getValueFlt(dbECSensor),0);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 2);
+		u8x8.print("  ec:");
+		u8x8.print(regmap.getValueFlt(dbECSensor), 0);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 3);
-			u8x8.print(" lvl:");
-			u8x8.print(regmap.getValueFlt(dbSonar+2),0);
-			u8x8.print("  ");
-			break;
+		u8x8.setCursor(0, 3);
+		u8x8.print(" lvl:");
+		u8x8.print(regmap.getValueFlt(dbSonar + 2), 0);
+		u8x8.print("  ");
+		break;
 
-		case 1:
-			u8x8.setCursor(0, 0);
-			u8x8.print("Modem");
+	case 1:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Modem");
 
-			u8x8.setCursor(0, 1);
-			u8x8.print("call:");
-			u8x8.print(regmap.getValueInt(dbModBus));
-			u8x8.print("  ");
+		u8x8.setCursor(0, 1);
+		u8x8.print("call:");
+		u8x8.print(regmap.getValueInt(dbModBus));
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 2);
-			u8x8.print("cnct:");
-			u8x8.print(regmap.getValueInt(dbModBus+1));
-			u8x8.print("  ");
+		u8x8.setCursor(0, 2);
+		u8x8.print("cnct:");
+		u8x8.print(regmap.getValueInt(dbModBus + 1));
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 3);
-			u8x8.print("errs:");
-			u8x8.print(regmap.getValueInt(dbModBus+2));
-			u8x8.print("  ");
-			break;
+		u8x8.setCursor(0, 3);
+		u8x8.print("errs:");
+		u8x8.print(regmap.getValueInt(dbModBus + 2));
+		u8x8.print("  ");
+		break;
 
-		case 2:
-			u8x8.setCursor(0, 0);
-			u8x8.print("Environment");
+	case 2:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Environment");
 
-			u8x8.setCursor(0, 1);
-			u8x8.print("temp:");
-			u8x8.print(regmap.getValueFlt(dbHonSensor),1);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 1);
+		u8x8.print("temp:");
+		u8x8.print(regmap.getValueFlt(dbHonSensor), 1);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 2);
-			u8x8.print(" hum:");
-			u8x8.print(regmap.getValueFlt(dbHonSensor+2),0);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 2);
+		u8x8.print(" hum:");
+		u8x8.print(regmap.getValueFlt(dbHonSensor + 2), 0);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 3);
-			u8x8.print("case:");
-			u8x8.print(regmap.getValueFlt(dbCaseTemp),1);
-			u8x8.print("  ");
-			break;
+		u8x8.setCursor(0, 3);
+		u8x8.print("case:");
+		u8x8.print(regmap.getValueFlt(dbCaseTemp), 1);
+		u8x8.print("  ");
+		break;
 
-		case 3:
-			u8x8.setCursor(0, 0);
-			u8x8.print("Sonar");
+	case 3:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Sonar");
 
-			u8x8.setCursor(0, 1);
-			u8x8.print("raw:");
-			u8x8.print(regmap.getValueFlt(dbSonar),0);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 1);
+		u8x8.print("raw:");
+		u8x8.print(regmap.getValueFlt(dbSonar), 0);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 2);
-			u8x8.print("span:");
-			u8x8.print(regmap.getValueFlt(dbSonar+4),0);
-			u8x8.print("  ");
+		u8x8.setCursor(0, 2);
+		u8x8.print("span:");
+		u8x8.print(regmap.getValueFlt(dbSonar + 4), 0);
+		u8x8.print("  ");
 
-			u8x8.setCursor(0, 3);
-			u8x8.print(" off:");
-			u8x8.print(regmap.getValueFlt(dbSonar+6),0);
-			u8x8.print("  ");
-			break;
+		u8x8.setCursor(0, 3);
+		u8x8.print(" off:");
+		u8x8.print(regmap.getValueFlt(dbSonar + 6), 0);
+		u8x8.print("  ");
+		break;
 
 		// case 4:
 		// 	u8x8.setCursor(0, 0);
@@ -280,12 +289,10 @@ void Menu_Show(int menuPos, bool b)
 		// 	u8x8.print("  ");
 		// 	break;
 
-		default:
-			u8x8.setCursor(0, 0);
-			u8x8.print("Unknown");
-
+	default:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Unknown");
 	}
-
 
 	// u8x8.setCursor(0, 1);
 	// u8x8.print("out t: ");

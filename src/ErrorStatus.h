@@ -31,6 +31,7 @@ class ErrorStatus
 			bool RTC_Error : 1;		  //  4 - unable to access RTC
 			bool HON_error : 1;		  //  5 - unable to access HON sensor
 			bool RTC_consistency : 1; //  6 - true if RTC is consistent
+			bool porf : 1;			  //  7 - power on restart
 		};
 		uint32_t l;
 		uint16_t w[2];

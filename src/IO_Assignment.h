@@ -32,7 +32,5 @@ const byte honSDA = 20;  // standard I2C SDA, shared with oled
 const byte honSDL = 21;  // standard I2C SDL
 const byte honID = 0x27; // i2c address of honeywell sensor
 
-// MODBUS slave RS485 port
-const byte mbRE = 27;
-const byte mbDE = 28;
+// MODBUS server
 HardwareSerial& mbSerial = Serial3;

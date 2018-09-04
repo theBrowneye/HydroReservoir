@@ -28,6 +28,7 @@ dbxMemMap mem[] = {
     /* 40020 */ {dbECSensor + 2, dbxMemMap::t16, "EC calibrate"},
     /* 40021 */ {dbCaseTemp + 0, dbxMemMap::tflt1, "case temperature"},
     /* 40023 */ {23, dbxMemMap::t16, "System flags"},
+    // TODO: fix up cycletime and runtime.  not spaced correctly
     /* 40024 */ {dbCycleTime, dbxMemMap::t16, "cycle time"},
     /* 40025 */ {dbRunTime, dbxMemMap::t16, "run time"},
     /* 40026 */ {26, dbxMemMap::t8, "testy"},
