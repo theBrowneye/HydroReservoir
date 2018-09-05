@@ -59,8 +59,6 @@ void HONSensor::tick()
             setValueflt(humidity, 2);
             taskTimer.startTimer(UpdateDelay);
             Error.HON_error = false;
-            // if (DEBUG_HON)
-            //     Serial.println("HON:good");
         }
         else
         {

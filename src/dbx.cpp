@@ -1,5 +1,13 @@
 #include "dbx.h"
 
+dbxRegisters::dbxRegisters()
+{
+    for (uint16_t i = 0; i < dbxMemorySize; i++)
+    {
+        badValue[i] = true;
+    }
+}
+
 float dbxRegisters::getValueFlt(uint16_t offset)
 {
     float *p = reinterpret_cast<float *>(hreg + offset);
@@ -9,6 +17,16 @@ float dbxRegisters::getValueFlt(uint16_t offset)
 uint16_t dbxRegisters::getValueInt(uint16_t offset)
 {
     return hreg[offset];
+}
+
+bool dbxRegisters::isBadValue(uint16_t offset)
+{
+    return badValue[offset];
+}
+
+void dbxRegisters::setBadValue(uint16_t offset, bool b)
+{
+    badValue[offset] = b;
 }
 
 dbxRegisters& regmap = dbxRegisters::getInstance();

@@ -12,6 +12,7 @@
 * 2018-08-14 Copied to new project
 */
 
+// TODO: finalise calibration of sonar, serial sensors (what else??)
 // defines for include files
 #define U8X8_HAVE_HW_I2C
 
@@ -110,7 +111,6 @@ void setup()
 
 	// process restart
 	parse_restart_flags();
-	wdt_disable();
 
 	// TODO: impelement WDT counters
 	// TODO: change ms back to use watertemperature
@@ -138,7 +138,7 @@ void setup()
 	u8x8.clear();
 
 	// set up modbus slave
- 	mb.setValuePtr(dbModBus);
+	mb.setValuePtr(dbModBus);
 	mb.begin();
 
 	// set up watchdog timer
@@ -152,10 +152,11 @@ void loop()
 	//wdt_reset();
 
 	// tick each measurement
+	// TODO: finalise serial sensors
 	case_temperature.tick();
 	water_temperature.tick();
-	// ph_sensor.tick();
-	// ec_sensor.tick();
+	ph_sensor.tick();
+	ec_sensor.tick();
 	hon_sensor.tick();
 	cycleTime.tick();
 	runTime.tick();
@@ -204,9 +205,10 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 3);
-		u8x8.print(" lvl:");
-		u8x8.print(regmap.getValueFlt(dbSonar + 2), 0);
+		u8x8.print("temp:");
+		u8x8.print(regmap.getValueFlt(dbWatTemp), 1);
 		u8x8.print("  ");
+
 		break;
 
 	case 1:
@@ -269,36 +271,44 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("  ");
 		break;
 
-		// case 4:
-		// 	u8x8.setCursor(0, 0);
-		// 	u8x8.print("System");
+	case 4:
+		u8x8.setCursor(0, 0);
+		u8x8.print("System");
 
-		// 	u8x8.setCursor(0, 1);
-		// 	u8x8.print("flag:");
-		// 	u8x8.print(regmap.getValueInt(23), HEX);
-		// 	u8x8.print("  ");
+		u8x8.setCursor(0, 1);
+		u8x8.print("flag:");
+		u8x8.print(regmap.getValueInt(dbSystemFlags), HEX);
+		u8x8.print("  ");
 
-		// 	u8x8.setCursor(0, 2);
-		// 	u8x8.print("cycl:");
-		// 	u8x8.print(regmap.getValueInt(24));
-		// 	u8x8.print("  ");
+		u8x8.setCursor(0, 2);
+		u8x8.print("cycl:");
+		u8x8.print(regmap.getValueFlt(dbCycleTime), 0);
+		u8x8.print("  ");
 
-		// 	u8x8.setCursor(0, 3);
-		// 	u8x8.print(" run:");
-		// 	u8x8.print(regmap.getValueInt(25));
-		// 	u8x8.print("  ");
-		// 	break;
+		u8x8.setCursor(0, 3);
+		u8x8.print(" run:");
+		u8x8.print(regmap.getValueFlt(dbRunTime), 2);
+		u8x8.print("  ");
+		break;
+
+	case 5:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Water Tank");
+
+		u8x8.setCursor(0, 1);
+		u8x8.print("temp:");
+		u8x8.print(regmap.getValueFlt(dbWatTemp), 1);
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 2);
+		u8x8.print(" lvl:");
+		u8x8.print(regmap.getValueFlt(dbSonar + 2), 0);
+		u8x8.print("  ");
+
+		break;
 
 	default:
 		u8x8.setCursor(0, 0);
 		u8x8.print("Unknown");
 	}
-
-	// u8x8.setCursor(0, 1);
-	// u8x8.print("out t: ");
-	// u8x8.print(regmap.getValueFlt(9), 1);
-	// u8x8.print("  ");
-
-	// Serial.print("sonar: ");
-	// Serial.println(regmap.getValueFlt(3));
 }

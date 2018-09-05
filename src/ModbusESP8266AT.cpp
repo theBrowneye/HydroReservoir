@@ -15,6 +15,8 @@ void ModbusDevice::begin()
 
 // TODO: implement error checking
 // establish communications to access point
+// TODO: implement connect and other long routines with timer controls (expect object??)
+// TODO: Add sensor to show if we are connected, and perhaps if there are any problems that need to be fixed
 void ModbusDevice::connect()
 {
     Serial.println("ModbusDevice::begin start");
@@ -93,6 +95,7 @@ void ModbusDevice::tick()
         diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
         setValueInt(++callsConnect, 2);
         connect();                              // try to connect
+        taskTimer.startTimer(msgTimeOut);      // (re)set diagnostic timer
     }
 
     if (isBusy() && taskTimer.timeOut())
@@ -178,6 +181,7 @@ void ModbusDevice::tick()
                     uint16_t i;
                     uint8_t b[2];
                 } uu;
+
                 for (auto i = 0; i < mb_cnt; i++)
                 {
                     uu.i = bPtr[i + mb_ref];
@@ -193,44 +197,49 @@ void ModbusDevice::tick()
                 // Serial.print(rf);
                 // Serial.print(",C:");
                 // Serial.println(rc);
-                Serial.print('.');
                 break;
 
             // FC16 - write multiple registers
             // len-in = 12 + num * 2
             // len-out = 12
+            // TODO: test FC3 and FC16
             // map ! 00 ! 01 ! 02 ! 03 ! 04 ! 05 ! 06 ! 07 ! 08 ! 09 ! 10 ! 11 ! 12 ! 13 ! 14 ! 15
             // in  ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L! VAL! VAL! ...
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L!
             case 16:
-                // mb_cnt = static_cast<uint8_t>(buffer[10]) * 256 + static_cast<uint8_t>(buffer[11]);
-                // buffer[5] = 6; // length
-                // while (mb_cnt-- > 0)
-                // {
-                // }
+                mb_cnt = static_cast<uint8_t>(rbuffer[10]) * 256 + static_cast<uint8_t>(rbuffer[11]);
+                for (int i = 0; i < 12; i++)
+                    sbuffer[i] = rbuffer[i];
+                sbuffer[5] = 6; // length
+                for (int i = 0; i < mb_cnt; i++) {
+                    bPtr[mb_ref+i] = sbuffer[12+i*2] * 256 + sbuffer[13+i*2];
+                    Serial.print("bPtr[");
+                    Serial.print(mb_ref+i);
+                    Serial.print("]=");
+                    Serial.println(bPtr[mb_ref+i],HEX);
+                }
+                rsend = true;
                 break;
 
             // FC6 - write single registers
-            // len-in = 12
+            // len-in = 12 
             // len-out = 12
             // map ! 00 ! 01 ! 02 ! 03 ! 04 ! 05 ! 06 ! 07 ! 08 ! 09 ! 10 ! 11 ! 12 ! 13 ! 14 ! 15
             // in  ! id ! id ! 00 ! 00 ! 00 ! len! un !  6 ! R-H! R-L! VAL! VAL!
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un !  6 ! R-H! R-L! VAL! VAL!
             case 6:
-                // mb_cnt = 1;
-                // buffer[5] = 6;
-                // hreg[mb_ref] = buffer[10] * 256 + buffer[11];
+                for (int i = 0; i < 12; i++)
+                    sbuffer[i] = rbuffer[i];
+                sbuffer[5] = 6;             // length
+                sbufflen = 12;              // length of out buffer
+                bPtr[mb_ref] = sbuffer[10] * 256 + sbuffer[11];
+                Serial.print("bPtr[");
+                Serial.print(mb_ref);
+                Serial.print("]=");
+                Serial.println(bPtr[mb_ref],HEX);
+                rsend = true;
                 break;
             }
-            // for (uint32_t i = 0; i < len; i++)
-            // {
-            //     Serial.print(buffer[i], HEX);
-            //     Serial.print(",");
-            // }
-            // Serial.println("done");
-
-            // send response
-            // bool ESP8266::send(uint8_t mux_id, const uint8_t *buffer, uint32_t len)
         }
         if (rsend)
         {

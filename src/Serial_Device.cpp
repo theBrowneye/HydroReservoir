@@ -6,6 +6,7 @@
  */
 
 #include "Serial_Device.h"
+#include "dbxMemoryMap.h"
 
 const char *const PHCommandMessages[] = {
 	"R",
@@ -104,9 +105,7 @@ void PHSensor::tick()
 	bool debug_msg = DEBUG_PH1 || (DEBUG_PH2 && (command != Read));
 
 	// get water temperature
-	// TODO: get water temperature
-	// temperature = regmap.getValueFlt(dbWatTemp);
-	temperature = 25.0;
+	temperature = regmap.getValueFlt(dbWatTemp);
 
 	// in normal mode, write a command and wait for a response (default is read)
 	if (state == write)
@@ -281,9 +280,8 @@ void ECSensor::tick()
 
 	bool debug_msg = DEBUG_EC1 || (DEBUG_EC2 && (command != Read));
 
-	// TODO: implement water handling
 	// get water temperature
-	temperature = 25.0;
+	temperature = regmap.getValueFlt(dbWatTemp);
 
 	if (state == write)
 	{

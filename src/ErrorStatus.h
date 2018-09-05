@@ -7,6 +7,8 @@
 */
 #include "Arduino.h"
 
+// TODO: include error handling in my DBX object.  Currenlty none of this stuff is reported back via modbus
+
 #define LogError(...)    \
 	Serial.print("[");   \
 	Serial.print(now()); \
@@ -15,28 +17,18 @@
 
 class ErrorStatus
 {
+  public:
+	ErrorStatus();
+
 	//variables
   public:
-	union {
-		struct
-		{
-			uint8_t cycle_time : 4;   //  0 - cycle time (ms)
-			uint8_t modbus_good : 4;  //  4 - modbus counter
-			uint8_t restarts : 4;	 //  8 - reset counter
-			uint8_t modbus_bad : 4;   // 12 - modbus errors
-			bool extrf : 1;			  //  0 - external reset
-			bool borf : 1;			  //  1 - brownout reset
-			bool wdrf : 1;			  //  2 - wdt reset
-			bool jtrf : 1;			  //  3 - jtag reset
-			bool RTC_Error : 1;		  //  4 - unable to access RTC
-			bool HON_error : 1;		  //  5 - unable to access HON sensor
-			bool RTC_consistency : 1; //  6 - true if RTC is consistent
-			bool porf : 1;			  //  7 - power on restart
-		};
-		uint32_t l;
-		uint16_t w[2];
-	};
-	ErrorStatus();
+	bool extrf : 1;		//  0 - external reset
+	bool borf : 1;		//  1 - brownout reset
+	bool wdrf : 1;		//  2 - wdt reset
+	bool jtrf : 1;		//  3 - jtag reset
+	bool HON_error : 1; //  5 - unable to access HON sensor
+	bool porf : 1;		//  7 - power on restart
+	uint16_t restarts;  // number of restarts
 
 }; //ErrorStatus
 

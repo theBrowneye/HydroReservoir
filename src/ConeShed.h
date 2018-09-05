@@ -10,7 +10,7 @@
 
 time_t getRunTimeSecs();       // run time in seconds
 float getRunTimeDays();        // run time in days
-const long MenuTimeOut = 250; // time between menu updates
+const long MenuTimeOut = 50; // time between menu updates
 
 // debug levels
 #define DEBUG_PH1 false

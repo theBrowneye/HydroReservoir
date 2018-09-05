@@ -6,8 +6,6 @@
 * Author: e210290
 */
 
-// TODO: find a better encoder class that handles the button press
-
 class Encoder
 {
   public:

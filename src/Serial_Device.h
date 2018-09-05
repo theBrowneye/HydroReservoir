@@ -42,6 +42,9 @@ class PHSensor : public Measurement
 	bool sensor_string_complete;
 	enum
 	{
+		hardFail = -2,
+        softFail = -1,
+        idle = 0,
 		init,
 		read,
 		write,
@@ -81,6 +84,9 @@ class ECSensor : public Measurement
 	bool sensor_string_complete;
 	enum
 	{
+		hardFail = -2,
+        softFail = -1,
+        idle = 0,
 		init,
 		read,
 		write,
