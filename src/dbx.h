@@ -7,7 +7,7 @@
 
 // TODO: makes sure all types are behind typedefs
 // TODO: Work out how to automatically update this item from the memory map configuration
-const uint16_t dbxMemorySize = 33; // make sure this is correct
+const uint16_t dbxMemorySize = 35; // make sure this is correct
 
 // http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html
 class BitVector

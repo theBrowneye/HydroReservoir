@@ -33,6 +33,7 @@
 #include "dbxMemoryMap.h"
 #include "Bounce2.h"
 #include "ModbusESP8266AT.h"
+#include "SystemVars.h"
 
 // manage wdt
 uint8_t avr_restarts __attribute__((section(".noinit")));
@@ -101,6 +102,7 @@ Timer menu_timer;
 U8X8_SSD1306_128X64_ALT0_HW_I2C u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
 Sonar ms(dstTrig, dstEcho, dstMaxDistance);
 ModbusDevice mb(mbSerial);
+SystemVars sys;
 
 // the setup routine runs once when you press reset:
 void setup()
@@ -112,8 +114,6 @@ void setup()
 	// process restart
 	parse_restart_flags();
 
-	// TODO: impelement WDT counters
-	// TODO: change ms back to use watertemperature
 	// set up instrument readings
 	water_temperature.setValuePtr(dbWatTemp);
 	case_temperature.setValuePtr(dbCaseTemp);
@@ -127,13 +127,14 @@ void setup()
 	encBtn.attach(encButton, INPUT_PULLUP);
 	encBtn.interval(25); // debounce interval
 	u8x8.begin();
+	sys.setValuePtr(dbSystemFlags);
 
 	// restore saved information
 	// mm.readFromFlash();
 
 	// set up UI objects
 	enc.begin();
-	enc.setMenuRange(15); // TODO: remove this after testing
+	enc.setMenuRange(10); 
 	u8x8.setFont(u8x8_font_amstrad_cpc_extended_f);
 	u8x8.clear();
 
@@ -162,6 +163,7 @@ void loop()
 	runTime.tick();
 	ms.tick();
 	encBtn.update();
+	sys.tick();
 
 	// display menus
 	if (menu_timer.timeOut())
@@ -228,8 +230,8 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 3);
 		u8x8.print("state:");
-		u8x8.print("  ");
 		u8x8.print(mb.getState());
+		u8x8.print("  ");
 		break;
 
 	case 2:
@@ -304,6 +306,27 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.setCursor(0, 2);
 		u8x8.print(" lvl:");
 		u8x8.print(regmap.getValueFlt(dbSonar + 2), 0);
+		u8x8.print("  ");
+
+		break;
+
+	case 6:
+		u8x8.setCursor(0, 0);
+		u8x8.print("System");
+
+		u8x8.setCursor(0, 1);
+		u8x8.print("rst1:");
+		u8x8.print(regmap.getValueInt(dbSystemFlags + 0));
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 2);
+		u8x8.print("rst2:");
+		u8x8.print(regmap.getValueInt(dbSystemFlags + 1));
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 3);
+		u8x8.print("flag:");
+		u8x8.print(regmap.getValueInt(dbSystemFlags + 2), HEX);
 		u8x8.print("  ");
 
 		break;

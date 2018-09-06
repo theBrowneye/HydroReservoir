@@ -107,6 +107,7 @@ void ModbusDevice::tick()
 {
     if (!isBusy())
     {
+        // check for diagnostic or failed connection
         if (diagTimer.timeOut() || isFailed())
         {
             if (isFailed())                         
@@ -125,6 +126,7 @@ void ModbusDevice::tick()
         }
     }
 
+    // check for timeout while waiting for something.  This means somethign broke
     if (isBusy() && taskTimer.timeOut())
     {
         Serial.print("<DIAG.2>");

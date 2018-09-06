@@ -25,5 +25,5 @@ private:
     softFail = -1,
     idle = 0,
     read = 1
-  } state;
+  };
 };

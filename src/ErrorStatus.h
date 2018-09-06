@@ -22,12 +22,17 @@ class ErrorStatus
 
 	//variables
   public:
-	bool extrf : 1;		//  0 - external reset
-	bool borf : 1;		//  1 - brownout reset
-	bool wdrf : 1;		//  2 - wdt reset
-	bool jtrf : 1;		//  3 - jtag reset
-	bool HON_error : 1; //  5 - unable to access HON sensor
-	bool porf : 1;		//  7 - power on restart
+	union {
+		struct {
+				bool extrf : 1;		//  0 - external reset
+				bool borf : 1;		//  1 - brownout reset
+				bool wdrf : 1;		//  2 - wdt reset
+				bool jtrf : 1;		//  3 - jtag reset
+				bool HON_error : 1; //  5 - unable to access HON sensor
+				bool porf : 1;		//  7 - power on restart
+		};
+		uint16_t flags;
+	};
 	uint16_t restarts;  // number of restarts
 
 }; //ErrorStatus

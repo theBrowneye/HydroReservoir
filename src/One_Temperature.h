@@ -23,9 +23,9 @@ class OneTemperature : public Measurement
     byte type_s;
     enum
     {
-        init,
+        init = 0,
         found,
         write,
         read
-    } state; //  might need compiler flag to reduce size -fshort-enums
+    };
 };

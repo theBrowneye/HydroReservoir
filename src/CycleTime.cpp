@@ -10,7 +10,7 @@
 // default constructor
 CycleTime::CycleTime()
 {
-	v = 1962;
+	v = 500;
 } //CycleTime
 
 const float TimeConstant = 0.001;
@@ -29,5 +29,7 @@ void CycleTime::tick()
 
 	taskTimer.startTimer(1000);
 
- 	setValueflt(v / 1000.0, 0);
+ 	setValueflt(v, 0);
+
+	 // TODO: Add restart counter
 }

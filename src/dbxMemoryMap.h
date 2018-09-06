@@ -34,6 +34,8 @@ const uint16_t dbSystemFlags = 32;
 //     /* 40029 */ {dbModBus + 0, dbxMemMap::t16, "modbus calls"},
 //     /* 40030 */ {dbModBus + 1, dbxMemMap::t16, "modbus errors"},
 //     /* 40031 */ {dbModBus + 2, dbxMemMap::t16, "num connects"},
-//     /* 40032 */ {dbSystemFlags, dbxMemMap::t16, "System flags"}
-//     /* 40033 */ 
+//     /* 40032 */ {dbSystemFlags + 0, dbxMemMap::t16, "Power on restarts"}
+//     /* 40033 */ {dbSystemFlags + 1, dbxMemMap::t16, "Interrupt restarts"}
+//     /* 40034 */ {dbSystemFlags + 2, dbxMemMap::t16, "System flags"}
+//     /* 40035 */ 
 // };

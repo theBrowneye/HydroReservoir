@@ -49,7 +49,7 @@ class PHSensor : public Measurement
 		read,
 		write,
 		passthrough
-	} state;
+	};
 	enum PHCommands command;
 	int target;
 	int slen;
@@ -91,7 +91,7 @@ class ECSensor : public Measurement
 		read,
 		write,
 		passthrough
-	} state;
+	};
 	enum ECCommands command;
 	int target;
 	int slen;
