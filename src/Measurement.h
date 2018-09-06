@@ -53,11 +53,12 @@ class Measurement
     uint16_t *bPtr; // pointer to memory map
     Timer taskTimer;
     Timer diagTimer;
-    enum
+    enum MeasurementStates
     {
         hardFail = -2,
         softFail = -1,
         idle = 0,
         busy = 1
-    } state;
+    };
+    int state;
 };

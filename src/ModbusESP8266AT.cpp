@@ -13,16 +13,32 @@ void ModbusDevice::begin()
     state = ModbusDevice::idle;
 }
 
+int ModbusDevice::getState()
+{
+    return state;
+}
+
 // TODO: implement error checking
 // establish communications to access point
 // TODO: implement connect and other long routines with timer controls (expect object??)
 // TODO: Add sensor to show if we are connected, and perhaps if there are any problems that need to be fixed
-void ModbusDevice::connect()
+// TODO: implement state machine for connections to prevent app from hanging on connect
+// TODO: implement better diagnostics to see what's happening during connect issues
+// TODO: don't reconnect unnecessarily - check connect status in diag call isntead of forcing new connection
+
+// if connectStrength == true then force a device reset
+void ModbusDevice::connect(bool connectStrength)
 {
     Serial.println("ModbusDevice::begin start");
 
     Serial.print("FW Version:");
     Serial.println(wifi.getVersion().c_str());
+
+    if (connectStrength)
+    {
+        Serial.println("restart ESP-01");
+        wifi.restart();
+    }
 
     if (wifi.setOprToStationSoftAP())
     {
@@ -83,38 +99,61 @@ void ModbusDevice::restart()
 {
     rbufflen = 0;
     state = ModbusDevice::idle;
-    diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
     taskTimer.stopTimer();                  // turn off task timer until we get a start segment
 }
 
 // process modem messages
 void ModbusDevice::tick()
 {
-    if (diagTimer.timeOut())
+    if (!isBusy())
     {
-        diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
-        setValueInt(++callsConnect, 2);
-        connect();                              // try to connect
-        taskTimer.startTimer(msgTimeOut);      // (re)set diagnostic timer
+        if (diagTimer.timeOut() || isFailed())
+        {
+            if (isFailed())                         
+            {
+                // force a hard reset ever 16 connects
+                if (callsConnect & 0xf == 0xf) {
+                    Serial.println("force hard reset");
+                    state = ModbusDevice::deviceError;
+                }
+                connect(state == ModbusDevice::deviceError);  // try to connect (hard connect if device failed)
+                setValueInt(++callsConnect, 2);
+            }
+            diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
+            taskTimer.startTimer(msgTimeOut);        // set message timeout
+            state = ModbusDevice::d1;
+        }
     }
 
     if (isBusy() && taskTimer.timeOut())
-        reset();
+    {
+        Serial.print("<DIAG.2>");
+        // check if diagnostic has timed out
+        if (state == ModbusDevice::d1 || state == ModbusDevice::d2 || state == ModbusDevice::d3) 
+        {
+            Serial.print("<DIAG.2.1>");
+            state = ModbusDevice::deviceError;
+        }
+        else
+        {
+            reset();
+        }
+    }
 
     // prevent buffer from growing too large
     if (rbufflen >= bufferSize)
         reset();
 
     // read any incoming data
-    bool b = false;
     while (sd.available())
     {
         char c = sd.read();
         rbuffer[rbufflen++] = c;
-        b = true;
+        // if (isprint(c))
+        //     Serial.print(c);
+        // else
+        //     Serial.print(c, HEX);
     }
-    if (!b)
-        return;
 
     // +IPD,id,len:data
     // look for a response header
@@ -191,12 +230,7 @@ void ModbusDevice::tick()
 
                 rsend = true;
 
-                // Serial.print("MODBUS:");
-                // Serial.print(mb_fc);
-                // Serial.print(",R:");
-                // Serial.print(rf);
-                // Serial.print(",C:");
-                // Serial.println(rc);
+                // Serial.print("fc3 ");
                 break;
 
             // FC16 - write multiple registers
@@ -271,6 +305,39 @@ void ModbusDevice::tick()
             restart();
         }
     }
+
+    if (state == ModbusDevice::d1)
+    {
+        sd.println("AT+CIPSTATUS");
+        state = ModbusDevice::d2;
+    }
+
+    // response could be "busy" or "ERROR"
+    if (state == ModbusDevice::d2 && rbufflen >= 7)
+    {
+        l = memstrn("STATUS:");
+        if (l > 0)
+        {
+            memrem(l + 7);
+            state = ModbusDevice::d3;
+        }
+    }
+
+    // looking for "STATUS:3" to show connected OK
+    if (state == ModbusDevice::d3 && rbufflen >= 1)
+    {
+        l = memstrn("\r\n");
+        if (l > 0)
+        {
+            int status = memtoi(l);
+            memrem(l + 2);
+            // any other status means it's not connected
+            state = (status == 3) ? ModbusDevice::idle : ModbusDevice::notConnected;
+            Serial.print("diag:");
+            Serial.println(status);
+        }
+    }
+
 }
 
 int ModbusDevice::memstrn(const char *needle)

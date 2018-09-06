@@ -223,12 +223,13 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.setCursor(0, 2);
 		u8x8.print("cnct:");
 		u8x8.print(regmap.getValueInt(dbModBus + 1));
-		u8x8.print("  ");
+		u8x8.print(",");
+		u8x8.print(regmap.getValueInt(dbModBus + 2));
 
 		u8x8.setCursor(0, 3);
-		u8x8.print("errs:");
-		u8x8.print(regmap.getValueInt(dbModBus + 2));
+		u8x8.print("state:");
 		u8x8.print("  ");
+		u8x8.print(mb.getState());
 		break;
 
 	case 2:

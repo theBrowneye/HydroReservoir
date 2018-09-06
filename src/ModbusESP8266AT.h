@@ -35,7 +35,8 @@ public:
   void tick();
   void reset();
   void restart();
-  void connect();
+  void connect(bool connectStrength = false);
+  int  getState();
 
 protected:
   HardwareSerial &sd;
@@ -45,13 +46,15 @@ protected:
   int16_t sbufflen;
   int16_t rbufflen;
   int16_t len;
-  enum
+  enum MeasurementStates
   {
-    hardFail = -2, softFail = -1,
+    deviceError = -2, 
+    notConnected = -1,
     idle = 0,
-    t1, t2, t3,
-    s1, s2
-  } state;
+    t1, t2, t3,     // receive buffer
+    s1, s2,         // send buffer
+    d1, d2, d3     // diagnostic health checks
+  };
   
   uint8_t mb_fc;  // modbus function code
   int16_t mb_ref; // modbus reference
