@@ -15,7 +15,7 @@ const byte oledSDL = 21;  // standard I2C SDL
 // ultrasonic distance sensor
 const byte dstTrig = 7;
 const byte dstEcho = 6;
-const unsigned int dstMaxDistance = 100;        // limit to 1000mm 
+const unsigned int dstMaxDistance = 500;
 
 // Water measurement
 const byte phRX = 18;

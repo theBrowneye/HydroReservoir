@@ -25,7 +25,8 @@
 #define PASSWORD "23Mort$treet"
 const int16_t bufferSize = 256;
 const long msgTimeOut = 5l * 1000l;         // 5 seconds to complete a message cycle
-const long diagTimeOut = 5l * 60l * 1000l; // 5 minutes to check connection and restart if necessary
+const long diagTimeOut = 1l * 60l * 1000l; // 1 minutes to check connection and restart if necessary
+const int16_t BarometerFail = 5;         // fail device after 10 bad connects or status
 
 class ModbusDevice : public Measurement
 {
@@ -35,7 +36,7 @@ public:
   void tick();
   void reset();
   void restart();
-  void connect(bool connectStrength = false);
+  bool connect(bool connectStrength = false);
   int  getState();
 
 protected:
@@ -48,14 +49,15 @@ protected:
   int16_t len;
   enum MeasurementStates
   {
-    deviceError = -2, 
     notConnected = -1,
     idle = 0,
     t1, t2, t3,     // receive buffer
     s1, s2,         // send buffer
     d1, d2, d3     // diagnostic health checks
   };
-  
+
+  int16_t barometer;
+
   uint8_t mb_fc;  // modbus function code
   int16_t mb_ref; // modbus reference
   int16_t mb_cnt; // modbus size

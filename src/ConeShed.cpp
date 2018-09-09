@@ -231,7 +231,8 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.setCursor(0, 3);
 		u8x8.print("state:");
 		u8x8.print(mb.getState());
-		u8x8.print("  ");
+		u8x8.print(",");
+		u8x8.print(regmap.getValueInt(dbModBus + 3));
 		break;
 
 	case 2:
@@ -280,7 +281,7 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("flag:");
-		u8x8.print(regmap.getValueInt(dbSystemFlags), HEX);
+		u8x8.print(regmap.getValueInt(dbSystemFlags+2), HEX);
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);

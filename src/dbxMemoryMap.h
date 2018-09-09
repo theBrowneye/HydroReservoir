@@ -13,7 +13,7 @@ const uint16_t dbCaseTemp = 23;
 const uint16_t dbCycleTime = 25;
 const uint16_t dbRunTime = 27;
 const uint16_t dbModBus = 29;
-const uint16_t dbSystemFlags = 32;
+const uint16_t dbSystemFlags = 33;
 
 // dbxMemMap mem[] = {
 //     /* empty */ 
@@ -34,8 +34,9 @@ const uint16_t dbSystemFlags = 32;
 //     /* 40029 */ {dbModBus + 0, dbxMemMap::t16, "modbus calls"},
 //     /* 40030 */ {dbModBus + 1, dbxMemMap::t16, "modbus errors"},
 //     /* 40031 */ {dbModBus + 2, dbxMemMap::t16, "num connects"},
-//     /* 40032 */ {dbSystemFlags + 0, dbxMemMap::t16, "Power on restarts"}
-//     /* 40033 */ {dbSystemFlags + 1, dbxMemMap::t16, "Interrupt restarts"}
-//     /* 40034 */ {dbSystemFlags + 2, dbxMemMap::t16, "System flags"}
-//     /* 40035 */ 
+//     /* 40032 */ {dbModBus + 3, dbxMemMap::t16, "Barometer"}
+//     /* 40033 */ {dbSystemFlags + 0, dbxMemMap::t16, "Power on restarts"}
+//     /* 40034 */ {dbSystemFlags + 1, dbxMemMap::t16, "Interrupt restarts"}
+//     /* 40035 */ {dbSystemFlags + 2, dbxMemMap::t16, "System flags"}
+//     /* 40036 */ 
 // };

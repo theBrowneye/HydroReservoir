@@ -6,11 +6,13 @@ ModbusDevice::ModbusDevice(HardwareSerial &s) : sd(s), wifi(s, 9600)
 
 void ModbusDevice::begin()
 {
-    callsConnect = callsError = callsTotal = 0;
+    barometer = callsConnect = callsError = callsTotal = 0;
     setValueInt(callsTotal, 0);
     setValueInt(callsError, 1);
     setValueInt(callsConnect, 2);
-    state = ModbusDevice::idle;
+    setValueInt(barometer, 3);
+    state = ModbusDevice::d1;   // force a diagnostic on start
+    barometer = BarometerFail;  // preset barometer to force a hard restart if required
 }
 
 int ModbusDevice::getState()
@@ -27,9 +29,10 @@ int ModbusDevice::getState()
 // TODO: don't reconnect unnecessarily - check connect status in diag call isntead of forcing new connection
 
 // if connectStrength == true then force a device reset
-void ModbusDevice::connect(bool connectStrength)
+bool ModbusDevice::connect(bool connectStrength)
 {
-    Serial.println("ModbusDevice::begin start");
+    bool retval = true;
+    Serial.println("ModbusDevice::begin");
 
     Serial.print("FW Version:");
     Serial.println(wifi.getVersion().c_str());
@@ -47,6 +50,7 @@ void ModbusDevice::connect(bool connectStrength)
     else
     {
         Serial.print("to station + softap err\r\n");
+        retval = false;
     }
 
     if (wifi.joinAP(SSID, PASSWORD))
@@ -58,6 +62,7 @@ void ModbusDevice::connect(bool connectStrength)
     else
     {
         Serial.print("Join AP failure\r\n");
+        retval = false;
     }
 
     if (wifi.enableMUX())
@@ -67,6 +72,7 @@ void ModbusDevice::connect(bool connectStrength)
     else
     {
         Serial.print("multiple err\r\n");
+        retval = false;
     }
 
     if (wifi.startTCPServer(502))
@@ -76,6 +82,7 @@ void ModbusDevice::connect(bool connectStrength)
     else
     {
         Serial.print("start tcp server err\r\n");
+        retval = false;
     }
 
     if (wifi.setTCPServerTimeout(60))
@@ -85,7 +92,9 @@ void ModbusDevice::connect(bool connectStrength)
     else
     {
         Serial.print("set tcp server timout err\r\n");
+        retval = false;
     }
+    return retval;
 }
 
 void ModbusDevice::reset()
@@ -105,41 +114,41 @@ void ModbusDevice::restart()
 // process modem messages
 void ModbusDevice::tick()
 {
-    if (!isBusy())
+    if (isFailed())                         
     {
-        // check for diagnostic or failed connection
-        if (diagTimer.timeOut() || isFailed())
+        if (!connect(true))  // try to connect (hard connect if device failed)
         {
-            if (isFailed())                         
-            {
-                // force a hard reset ever 16 connects
-                if (callsConnect & 0xf == 0xf) {
-                    Serial.println("force hard reset");
-                    state = ModbusDevice::deviceError;
-                }
-                connect(state == ModbusDevice::deviceError);  // try to connect (hard connect if device failed)
-                setValueInt(++callsConnect, 2);
-            }
-            diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
-            taskTimer.startTimer(msgTimeOut);        // set message timeout
-            state = ModbusDevice::d1;
+            Serial.println("connect failed");
+            barometer = BarometerFail;
         }
+        setValueInt(++callsConnect, 2);
+        setValueInt(barometer = 0, 3);
+        restart();
+    }
+
+    // issue a diagnostic if not in the middle of a message cycle
+    if (!isBusy() && diagTimer.timeOut())
+    {
+        diagTimer.startTimer(diagTimeOut);      // (re)set diagnostic timer
+        taskTimer.startTimer(msgTimeOut);        // set message timeout
+        state = ModbusDevice::d1;
     }
 
     // check for timeout while waiting for something.  This means somethign broke
     if (isBusy() && taskTimer.timeOut())
     {
-        Serial.print("<DIAG.2>");
         // check if diagnostic has timed out
         if (state == ModbusDevice::d1 || state == ModbusDevice::d2 || state == ModbusDevice::d3) 
         {
-            Serial.print("<DIAG.2.1>");
-            state = ModbusDevice::deviceError;
+            // set barometer high so we do a hard reset next time.
+            Serial.println("diagnostic timeout");
+            barometer = 100;
         }
         else
         {
-            reset();
+            Serial.println("read timeout");
         }
+        reset();
     }
 
     // prevent buffer from growing too large
@@ -333,13 +342,21 @@ void ModbusDevice::tick()
         {
             int status = memtoi(l);
             memrem(l + 2);
-            // any other status means it's not connected
-            state = (status == 3) ? ModbusDevice::idle : ModbusDevice::notConnected;
+            // any other status than 3 means it's not fully connected
+            if (status != 3) 
+                barometer++;
+            else 
+                barometer--;
+            state = ModbusDevice::idle;
+            if (barometer >= BarometerFail) state = ModbusDevice::notConnected;
+            if (barometer < 0) barometer = 0;
+            setValueInt(barometer, 3);
             Serial.print("diag:");
-            Serial.println(status);
+            Serial.print(status);
+            Serial.print(",");
+            Serial.println(barometer);
         }
     }
-
 }
 
 int ModbusDevice::memstrn(const char *needle)
