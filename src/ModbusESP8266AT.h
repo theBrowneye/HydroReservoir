@@ -26,7 +26,7 @@
 const int16_t bufferSize = 256;
 const long msgTimeOut = 5l * 1000l;         // 5 seconds to complete a message cycle
 const long diagTimeOut = 1l * 60l * 1000l; // 1 minutes to check connection and restart if necessary
-const int16_t BarometerFail = 5;         // fail device after 10 bad connects or status
+const int16_t BarometerFail = 5;         // fail device after this many bad diagnostic calls
 
 class ModbusDevice : public Measurement
 {
@@ -70,4 +70,5 @@ protected:
   uint16_t callsTotal;
   uint16_t callsError;
   uint16_t callsConnect;
+  uint16_t status;
 };

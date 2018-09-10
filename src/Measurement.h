@@ -33,6 +33,10 @@ class Measurement
     {
         regmap.setValueInt(base + offset, f);
     };
+    uint16_t getValueInt(uint16_t offset)
+    {
+        return regmap.getValueInt(base + offset);
+    };
     void setBadValue(bool b, uint16_t offset)
     {
         regmap.setBadValue(base + offset, b);

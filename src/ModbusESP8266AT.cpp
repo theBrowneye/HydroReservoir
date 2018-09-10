@@ -1,4 +1,5 @@
 #include "ModbusESP8266AT.h"
+#include "dbx.h"
 
 ModbusDevice::ModbusDevice(HardwareSerial &s) : sd(s), wifi(s, 9600)
 {
@@ -11,13 +12,12 @@ void ModbusDevice::begin()
     setValueInt(callsError, 1);
     setValueInt(callsConnect, 2);
     setValueInt(barometer, 3);
-    state = ModbusDevice::d1;   // force a diagnostic on start
-    barometer = BarometerFail;  // preset barometer to force a hard restart if required
+    state = ModbusDevice::idle;  
 }
 
 int ModbusDevice::getState()
 {
-    return state;
+    return status;
 }
 
 // TODO: implement error checking
@@ -33,9 +33,6 @@ bool ModbusDevice::connect(bool connectStrength)
 {
     bool retval = true;
     Serial.println("ModbusDevice::begin");
-
-    Serial.print("FW Version:");
-    Serial.println(wifi.getVersion().c_str());
 
     if (connectStrength)
     {
@@ -114,6 +111,12 @@ void ModbusDevice::restart()
 // process modem messages
 void ModbusDevice::tick()
 {
+    // check barometer
+    if (barometer >= BarometerFail) state = ModbusDevice::notConnected;
+    if (barometer < 0) barometer = 0;
+    setValueInt(barometer, 3);
+
+    // proces bad connection
     if (isFailed())                         
     {
         if (!connect(true))  // try to connect (hard connect if device failed)
@@ -209,8 +212,10 @@ void ModbusDevice::tick()
         if (len >= 12)
         {
             mb_fc = static_cast<uint8_t>(rbuffer[7]);
-            mb_ref = static_cast<uint8_t>(rbuffer[8]) * 256 + static_cast<uint8_t>(rbuffer[9]);
+            mb_ref = h_i8toi16(rbuffer[8], rbuffer[9]);
 
+            // Serial.print("fc:");
+            // Serial.println(mb_fc);
             switch (mb_fc)
             {
             // FC3 - read multiple registers
@@ -220,23 +225,18 @@ void ModbusDevice::tick()
             // in  ! id ! id ! 00 ! 00 ! 00 ! len! un ! 03 ! R-H! R-L! C-H! C-L!
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 03 ! byt! val! val!
             case 3:
-                mb_cnt = static_cast<uint8_t>(rbuffer[10]) * 256 + static_cast<uint8_t>(rbuffer[11]);
+                mb_cnt = h_i8toi16(rbuffer[10], rbuffer[11]);
                 for (int i = 0; i < 12; i++)
                     sbuffer[i] = rbuffer[i];
                 sbuffer[5] = 3 + mb_cnt * 2; // length
                 sbuffer[8] = mb_cnt * 2;     // number of value bytes
                 sbufflen = 9 + mb_cnt * 2;   // length of out buffer
 
-                union {
-                    uint16_t i;
-                    uint8_t b[2];
-                } uu;
-
-                for (auto i = 0; i < mb_cnt; i++)
+                for (int i = 0; i < mb_cnt; i++)
                 {
-                    uu.i = regmap[i + mb_ref];
-                    sbuffer[9 + i * 2] = uu.b[0];
-                    sbuffer[10 + i * 2] = uu.b[1];
+                    uint32_t uu = regmap[i + mb_ref];
+                    sbuffer[9 + i * 2] =  uu / 256;
+                    sbuffer[10 + i * 2] = uu % 256;
                 }
 
                 rsend = true;
@@ -252,17 +252,17 @@ void ModbusDevice::tick()
             // in  ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L! VAL! VAL! ...
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L!
             case 16:
-                mb_cnt = static_cast<uint8_t>(rbuffer[10]) * 256 + static_cast<uint8_t>(rbuffer[11]);
+                mb_cnt = h_i8toi16(rbuffer[10], rbuffer[11]);
                 for (int i = 0; i < 12; i++)
                     sbuffer[i] = rbuffer[i];
-                sbuffer[5] = 6; // length
                 for (int i = 0; i < mb_cnt; i++) {
-                    regmap[mb_ref+i] = sbuffer[12+i*2] * 256 + sbuffer[13+i*2];
-                    Serial.print("bPtr[");
+                    regmap[mb_ref+i] = h_i8toi16(rbuffer[12+i*2], rbuffer[13+i*2]);
+                    Serial.print("FC16[");
                     Serial.print(mb_ref+i);
                     Serial.print("]=");
                     Serial.println(regmap[mb_ref+i],HEX);
                 }
+                sbufflen = 12;
                 rsend = true;
                 break;
 
@@ -275,13 +275,12 @@ void ModbusDevice::tick()
             case 6:
                 for (int i = 0; i < 12; i++)
                     sbuffer[i] = rbuffer[i];
-                sbuffer[5] = 6;             // length
-                sbufflen = 12;              // length of out buffer
-                regmap[mb_ref] = sbuffer[10] * 256 + sbuffer[11];
-                Serial.print("bPtr[");
+                regmap[mb_ref] = h_i8toi16(rbuffer[10], rbuffer[11]);
+                Serial.print("FC6[");
                 Serial.print(mb_ref);
                 Serial.print("]=");
                 Serial.println(regmap[mb_ref],HEX);
+                sbufflen = 12;              // length of out buffer
                 rsend = true;
                 break;
             }
@@ -335,22 +334,28 @@ void ModbusDevice::tick()
     }
 
     // looking for "STATUS:3" to show connected OK
+    // STATUS:3
+    // STATUS:0,"TCP","192.168.1.99",54528,502,1
     if (state == ModbusDevice::d3 && rbufflen >= 1)
     {
         l = memstrn("\r\n");
         if (l > 0)
         {
-            int status = memtoi(l);
-            memrem(l + 2);
+            status = memtoi(l);
             // any other status than 3 means it's not fully connected
-            if (status != 3) 
+            if (status > 5) {             // skip extended diagnostic
+            } else if (status != 3) {
                 barometer++;
-            else 
+            } else {
                 barometer--;
+            }
+            for (auto i = 0; i < l; i++)
+            {
+                char c = rbuffer[i];
+                Serial.print(isprint(c) ? c : '.');
+            }
+            memrem(l + 2);
             state = ModbusDevice::idle;
-            if (barometer >= BarometerFail) state = ModbusDevice::notConnected;
-            if (barometer < 0) barometer = 0;
-            setValueInt(barometer, 3);
             Serial.print("diag:");
             Serial.print(status);
             Serial.print(",");

@@ -21,12 +21,25 @@
 // ! 3 - calibrate 10 (reset after operation)
 // ! 4 - turn on debugging lights (reset after operation)
 // ! 5 - turn off debugging lights (reset after operation)
+// ! 6 - turn on passthrough (reset after operation)
+// ! 7 - turn off passthrough (reset after operation)
 
 // #define   SERIAL_DEBUG
+enum PHFlags 
+{
+	Debug = 1 << 0,
+	Cal7 = 1 << 1,
+	Cal4 = 1 << 2,
+	Cal10 = 1 << 3,
+	DbgOn = 1 << 4,
+	DbgOff = 1 << 5,
+	PassOn = 1 << 6,
+	PassOff = 1 << 7
+};
 
 const int SerialTimeOut = 5000;
 const int StringBufferSize = 30;
-const long TempCompThrottle = 1200000; // 20 mins = 20 * 60 * 1000 = 1200000
+const long TempCompThrottle = 20l * 60l * 1000l; // 20 mins = 20 * 60 * 1000 = 1200000
 
 class PHSensor : public Measurement
 {
@@ -36,7 +49,6 @@ class PHSensor : public Measurement
 		Read,
 		DebugOn,
 		DebugOff,
-		CalStart,
 		Cal7,
 		Cal4,
 		Cal10
@@ -44,9 +56,6 @@ class PHSensor : public Measurement
 	PHSensor(HardwareSerial *id);
 	void tick();
 	void setMode();
-	int getMode();
-	const char *getModeString(int s);
-	int setTarget(int t);
 
   protected:
 	float temperature;
@@ -67,7 +76,8 @@ class PHSensor : public Measurement
 	int target;
 	int slen;
 	Timer water_throttle;
-	bool inCalibration;
+	bool debug;
+	// bool inCalibration;
 };
 
 class ECSensor : public Measurement

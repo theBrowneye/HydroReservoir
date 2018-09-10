@@ -261,17 +261,17 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("raw:");
-		u8x8.print(regmap.getValueFlt(dbSonar), 0);
+		u8x8.print(regmap.asStringF(dbSonar, 0));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);
 		u8x8.print("span:");
-		u8x8.print(regmap.getValueFlt(dbSonar + 4), 0);
+		u8x8.print(regmap.asStringF(dbSonar + 4, 0));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 3);
 		u8x8.print(" off:");
-		u8x8.print(regmap.getValueFlt(dbSonar + 6), 0);
+		u8x8.print(regmap.asStringF(dbSonar + 6, 0));
 		u8x8.print("  ");
 		break;
 
@@ -286,12 +286,12 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 2);
 		u8x8.print("cycl:");
-		u8x8.print(regmap.getValueFlt(dbCycleTime), 0);
+		u8x8.print(regmap.asStringF(dbCycleTime, 0));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 3);
 		u8x8.print(" run:");
-		u8x8.print(regmap.getValueFlt(dbRunTime, 2);
+		u8x8.print(regmap.asStringF(dbRunTime, 2));
 		u8x8.print("  ");
 		break;
 
@@ -301,12 +301,12 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("temp:");
-		u8x8.print(regmap.getValueFlt(dbWatTemp, 1));
+		u8x8.print(regmap.asStringF(dbWatTemp, 1));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);
 		u8x8.print(" lvl:");
-		u8x8.print(regmap.getValueFlt(dbSonar + 2, 0));
+		u8x8.print(regmap.asStringF(dbSonar + 2, 0));
 		u8x8.print("  ");
 
 		break;

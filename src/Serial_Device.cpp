@@ -12,19 +12,9 @@ const char *const PHCommandMessages[] = {
 	"R",
 	"L1",
 	"L0",
-	"CalStart",
 	"S",
 	"F",
 	"T",
-};
-const char *const PHCommandNames[] = {
-	"Read    ",
-	"DebugOn ",
-	"DebugOff",
-	"CalStart",
-	"Cal7.0  ",
-	"Cal4.0  ",
-	"Cal10.0 "
 };
 
 PHSensor::PHSensor(HardwareSerial *id) : device(id)
@@ -33,95 +23,85 @@ PHSensor::PHSensor(HardwareSerial *id) : device(id)
 	sensor_string_complete = false;
 	state = init;
 	command = Read;
-	inCalibration = false;
-}
-
-const char *PHSensor::getModeString(int s)
-{
-	return PHCommandNames[s];
-}
-
-int PHSensor::getMode()
-{
-	return command;
+	debug = false;
 }
 
 void PHSensor::setMode()
 {
-	switch (target)
-	{
-	case 0:
-		command = Read;
-		break;
-	case 1:
-		command = DebugOn;
-		state = passthrough;
-		break;
-	case 2:
-		command = DebugOff;
-		state = write;
-		command = Read;
-		break;
-	case 3:
-		command = CalStart;
-		break;
-	case 4:
-		command = Cal7;
-		break;
-	case 5:
-		command = Cal4;
-		break;
-	case 6:
-		command = Cal10;
-		break;
-	default:
-		command = Read;
-		break;
-	}
-	if (DEBUG_PH1 || (DEBUG_PH2 && (command != Read)))
-	{
-		Serial.print("PH command: ");
-		Serial.println(PHCommandMessages[command]);
-	}
-};
+	static uint16_t lastFlags = 0xffff;
+	uint16_t flags = getValueInt(2);
+	command = PHCommands::Read;
 
-int PHSensor::setTarget(int t)
-{
-	target += t;
-	target = max(Read, target);
-	target = min(Cal10, target);
-	return target;
-}
+	// check resetable flags
+	if (flags & PHFlags::DbgOn)
+	{
+		command = PHCommands::DebugOn;
+	}
+	else if (flags & PHFlags::DbgOff)
+	{
+		command = PHCommands::DebugOff;
+	}
+	else if (flags & PHFlags::PassOn)
+	{
+		state = passthrough;
+	}
+	else if (flags & PHFlags::PassOff)
+	{
+		command = PHCommands::Read;
+	}
+	else if (flags & PHFlags::Cal7)
+	{
+		command = PHCommands::Cal7;
+	}
+	else if (flags & PHFlags::Cal4)
+	{
+		command = PHCommands::Cal4;
+	}
+	else if (flags & PHFlags::Cal10)
+	{
+		command = PHCommands::Cal10;
+	}
+
+	// check for debug mode and clear any resetable flags at the same time
+	if (flags != lastFlags)
+	{
+		Serial.print("flags:");
+		Serial.print(flags, HEX);
+		lastFlags = flags;
+	}
+	debug = true;
+	// debug = (flags &= PHFlags::Debug);
+	
+	// if (debug)
+	// {
+	// 	Serial.print("PH command: ");
+	// 	Serial.println(command);
+	// }
+};
 
 void PHSensor::tick()
 {
-
+	return;
 	if (state == init)
 	{
-		device->begin(38400);
+		// device->begin(38400);
+		device->begin(1200);
+		device->write("I\r");
 		state = write;
 	}
 
-	bool debug_msg = DEBUG_PH1 || (DEBUG_PH2 && (command != Read));
+	// see if any commands received
+	setMode();
 
 	// get water temperature
-	temperature = regmap.getValueFlt(dbWatTemp);
+	temperature = regmap.isBadValue(dbWatTemp) ? -1.0 : regmap.getValueFlt(dbWatTemp);
 
 	// in normal mode, write a command and wait for a response (default is read)
 	if (state == write)
 	{
-		if (water_throttle.timeOut() || command == CalStart)
+		if (water_throttle.timeOut())
 		{
-			if (!inCalibration)
-			{
-				if (temperature > 0)
-					device->print(temperature);
-				if (command == CalStart)
-				{
-					command = Read;
-					inCalibration = true;
-				}
-			}
+			if (temperature > 0) device->print(temperature);
 			water_throttle.startTimer(TempCompThrottle);
 		}
 		else
@@ -129,13 +109,11 @@ void PHSensor::tick()
 			device->write(PHCommandMessages[command]);
 			device->write("\r");
 			command = Read;
-			if (debug_msg)
-			{
-				Serial.print("PH:");
-				Serial.println(PHCommandMessages[command]);
-			}
-			if (command == Cal10)
-				inCalibration = false;
+			// if (debug)
+			// {
+			// 	Serial.print("PH:");
+			// 	Serial.println(PHCommandMessages[command]);
+			// }
 		}
 		state = read;
 		slen = 0;
@@ -172,26 +150,24 @@ void PHSensor::tick()
 			{
 				sensor_string_complete = true;
 			}
+			if (!isprint(c)) c='.';
+			// if (debug) Serial.print(c);
 		}
 
 		if (sensor_string_complete)
 		{
 			float v = atof(sensor);
 			if (v > 1)
-				setValueflt(v, 0);
-			if (debug_msg)
 			{
-				Serial.print("PH[");
-				Serial.print(sensor);
-				Serial.print("] ");
-				Serial.println(v);
+				setValueflt(v, 0);
+				setBadValue(false, 0);
 			}
 			state = write;
 		}
 		// if timeout on getting a complete string
 		if (taskTimer.timeOut())
 		{
-			// pValue->updateBad();
+			setBadValue(true, 0);
 			state = write;
 		}
 	}
@@ -253,11 +229,6 @@ void ECSensor::setMode()
 		command = Read;
 		break;
 	}
-	if (DEBUG_EC1 || (DEBUG_EC2 && (command != Read)))
-	{
-		Serial.print("EC command: ");
-		Serial.println(command);
-	}
 };
 
 int ECSensor::setTarget(int t)
@@ -270,6 +241,8 @@ int ECSensor::setTarget(int t)
 
 void ECSensor::tick()
 {
+	// FIXME: get rid of this
+	return;
 
 	if (state == init)
 	{
@@ -278,7 +251,7 @@ void ECSensor::tick()
 		state = write;
 	}
 
-	bool debug_msg = DEBUG_EC1 || (DEBUG_EC2 && (command != Read));
+	bool debug_msg = 9; //DEBUG_EC1 || (DEBUG_EC2 && (command != Read));
 
 	// get water temperature
 	temperature = regmap.getValueFlt(dbWatTemp);
