@@ -18,7 +18,6 @@ class Measurement
   public:
     Measurement()
     {
-        bPtr = hreg;
         state = Measurement::idle;
     };
     void tick();
@@ -28,13 +27,20 @@ class Measurement
     };
     void setValueflt(float f, uint16_t offset)
     {
-        float *p = reinterpret_cast<float *>(bPtr + base + offset);
-        *p = f;
+        regmap.setValueFlt(base + offset, f);
     };
     void setValueInt(uint16_t f, uint16_t offset)
     {
-        *(bPtr + base + offset) = f;
+        regmap.setValueInt(base + offset, f);
     };
+    void setBadValue(bool b, uint16_t offset)
+    {
+        regmap.setBadValue(base + offset, b);
+    }
+    bool isBadValue(uint16_t offset)
+    {
+        return regmap.isBadValue(base + offset);
+    }
     bool isFailed() 
     {
         return state < 0;
@@ -50,7 +56,6 @@ class Measurement
 
   protected:
     uint16_t base;  // register offset for this object
-    uint16_t *bPtr; // pointer to memory map
     Timer taskTimer;
     Timer diagTimer;
     enum MeasurementStates

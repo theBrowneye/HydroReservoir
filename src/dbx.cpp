@@ -4,19 +4,39 @@ dbxRegisters::dbxRegisters()
 {
     for (uint16_t i = 0; i < dbxMemorySize; i++)
     {
-        badValue[i] = true;
+        badValue[i] = false;    // default to good value
     }
 }
 
 float dbxRegisters::getValueFlt(uint16_t offset)
 {
-    float *p = reinterpret_cast<float *>(hreg + offset);
+    float *p = reinterpret_cast<float *>(&reg[offset]);
     return *p;
 } 
 
 uint16_t dbxRegisters::getValueInt(uint16_t offset)
 {
-    return hreg[offset];
+    return reg[offset];
+}
+
+void dbxRegisters::setValueFlt(uint16_t offset, float v)
+{
+    * (reinterpret_cast<float *>(&reg[offset])) = v;
+}
+
+uint16_t* dbxRegisters::getRegMap()
+{
+    return reg;
+}
+
+uint16_t& dbxRegisters::operator[] (uint16_t x)
+{
+    return reg[x];
+}
+
+void dbxRegisters::setValueInt(uint16_t offset, uint16_t v)
+{
+    reg[offset] = v;
 }
 
 bool dbxRegisters::isBadValue(uint16_t offset)
@@ -29,8 +49,19 @@ void dbxRegisters::setBadValue(uint16_t offset, bool b)
     badValue[offset] = b;
 }
 
+String dbxRegisters::asStringF(uint16_t offset, unsigned char spec)
+{
+    String v = isBadValue(offset) ? "????" : String(getValueFlt(offset), spec);
+    return v;
+}
+
+String dbxRegisters::asStringI(uint16_t offset, unsigned char spec)
+{
+    String v = isBadValue(offset) ? "????" : String(getValueInt(offset), spec);
+    return v;
+}
+
 dbxRegisters& regmap = dbxRegisters::getInstance();
-dbxMemPtr hreg = regmap.reg;
 
 dbxMenu::dbxMenu() 
 {

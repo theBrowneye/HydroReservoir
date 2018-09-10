@@ -4,10 +4,10 @@
 
 #include "Arduino.h"
 #include "string.h"
+#include "dbxMemoryMap.h"
 
 // TODO: makes sure all types are behind typedefs
 // TODO: Work out how to automatically update this item from the memory map configuration
-const uint16_t dbxMemorySize = 36; // make sure this is correct
 
 // http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html
 class BitVector
@@ -35,6 +35,7 @@ class BitVector
 	uint8_t *bv;
 };
 
+// TODO: Implement bit vectors to hold bad values
 // define the register structure that holds the data
 class dbxRegisters
 {
@@ -45,9 +46,15 @@ class dbxRegisters
 
   public:
 	float getValueFlt(uint16_t offset);
+	void setValueFlt(uint16_t offset, float v);
 	uint16_t getValueInt(uint16_t offset);
+	void setValueInt(uint16_t offset, uint16_t v);
 	bool isBadValue(uint16_t offset);
 	void setBadValue(uint16_t offset, bool b = true);
+	String asStringF(uint16_t offset, unsigned char spec);
+	String asStringI(uint16_t offset, unsigned char spec);
+	uint16_t* getRegMap();
+	uint16_t& operator[] (uint16_t x);
 	static dbxRegisters &getInstance()
 	{
 		static dbxRegisters instance;
@@ -59,7 +66,6 @@ typedef uint16_t dbxScreenSet;
 typedef uint16_t *dbxMemPtr;
 
 extern dbxRegisters &regmap;
-extern dbxMemPtr hreg;
 
 // define the memory map
 class dbxMemMap
@@ -77,8 +83,6 @@ class dbxMemMap
 	uint8_t dtype;
 	String label;
 };
-
-extern dbxMemPtr hreg;
 
 // lcd menu manager
 const int MaxScreenSets = 4;

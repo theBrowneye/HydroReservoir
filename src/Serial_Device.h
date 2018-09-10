@@ -9,6 +9,19 @@
 #include "ConeShed.h"
 #include "Measurement.h"
 
+// memory map definition
+// ! 5 ! 4 ! 3 ! 2 ! 1 ! 0 ! 9 ! 8 ! 7 ! 6 ! 5 ! 4 ! 3 ! 2 ! 1 ! 0 !
+// !---------------------------------------------------------------!
+// ! PV float word 1                                               !
+// ! PV float word 2                                               !
+// !---------------------------------------------------------------!
+// ! 0 - debug mode (send all traffic to console)
+// ! 1 - calibrate 7 (reset after operation)
+// ! 2 - calibrate 4 (reset after operation)
+// ! 3 - calibrate 10 (reset after operation)
+// ! 4 - turn on debugging lights (reset after operation)
+// ! 5 - turn off debugging lights (reset after operation)
+
 // #define   SERIAL_DEBUG
 
 const int SerialTimeOut = 5000;

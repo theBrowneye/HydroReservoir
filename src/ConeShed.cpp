@@ -34,18 +34,18 @@
 #include "Bounce2.h"
 #include "ModbusESP8266AT.h"
 #include "SystemVars.h"
+#include "dbxMemoryMap.h"
 
 // manage wdt
 uint8_t avr_restarts __attribute__((section(".noinit")));
 uint8_t int_restarts __attribute__((section(".noinit")));
 
 // install catchall isr
-// send "!" to serial port
 ISR(BADISR_vect)
 {
 	int_restarts++;
-	for (;;)
-		UDR0 = '!';
+	// for (;;)
+	// 	UDR0 = '!';
 }
 
 void parse_restart_flags()
@@ -198,17 +198,17 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("  ph:");
-		u8x8.print(regmap.getValueFlt(dbPHSensor), 1);
+		u8x8.print(regmap.asStringF(dbPHSensor, 1));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);
 		u8x8.print("  ec:");
-		u8x8.print(regmap.getValueFlt(dbECSensor), 0);
+		u8x8.print(regmap.asStringF(dbECSensor, 0));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 3);
 		u8x8.print("temp:");
-		u8x8.print(regmap.getValueFlt(dbWatTemp), 1);
+		u8x8.print(regmap.asStringF(dbWatTemp, 1));
 		u8x8.print("  ");
 
 		break;
@@ -241,17 +241,17 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("temp:");
-		u8x8.print(regmap.getValueFlt(dbHonSensor), 1);
+		u8x8.print(regmap.asStringF(dbHonSensor, 1));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);
 		u8x8.print(" hum:");
-		u8x8.print(regmap.getValueFlt(dbHonSensor + 2), 0);
+		u8x8.print(regmap.asStringF(dbHonSensor + 2, 0));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 3);
 		u8x8.print("case:");
-		u8x8.print(regmap.getValueFlt(dbCaseTemp), 1);
+		u8x8.print(regmap.asStringF(dbCaseTemp, 1));
 		u8x8.print("  ");
 		break;
 
@@ -291,7 +291,7 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 3);
 		u8x8.print(" run:");
-		u8x8.print(regmap.getValueFlt(dbRunTime), 2);
+		u8x8.print(regmap.getValueFlt(dbRunTime, 2);
 		u8x8.print("  ");
 		break;
 
@@ -301,12 +301,12 @@ void Menu_Show(int menuPos, bool b)
 
 		u8x8.setCursor(0, 1);
 		u8x8.print("temp:");
-		u8x8.print(regmap.getValueFlt(dbWatTemp), 1);
+		u8x8.print(regmap.getValueFlt(dbWatTemp, 1));
 		u8x8.print("  ");
 
 		u8x8.setCursor(0, 2);
 		u8x8.print(" lvl:");
-		u8x8.print(regmap.getValueFlt(dbSonar + 2), 0);
+		u8x8.print(regmap.getValueFlt(dbSonar + 2, 0));
 		u8x8.print("  ");
 
 		break;

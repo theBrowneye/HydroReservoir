@@ -234,7 +234,7 @@ void ModbusDevice::tick()
 
                 for (auto i = 0; i < mb_cnt; i++)
                 {
-                    uu.i = bPtr[i + mb_ref];
+                    uu.i = regmap[i + mb_ref];
                     sbuffer[9 + i * 2] = uu.b[0];
                     sbuffer[10 + i * 2] = uu.b[1];
                 }
@@ -257,11 +257,11 @@ void ModbusDevice::tick()
                     sbuffer[i] = rbuffer[i];
                 sbuffer[5] = 6; // length
                 for (int i = 0; i < mb_cnt; i++) {
-                    bPtr[mb_ref+i] = sbuffer[12+i*2] * 256 + sbuffer[13+i*2];
+                    regmap[mb_ref+i] = sbuffer[12+i*2] * 256 + sbuffer[13+i*2];
                     Serial.print("bPtr[");
                     Serial.print(mb_ref+i);
                     Serial.print("]=");
-                    Serial.println(bPtr[mb_ref+i],HEX);
+                    Serial.println(regmap[mb_ref+i],HEX);
                 }
                 rsend = true;
                 break;
@@ -277,11 +277,11 @@ void ModbusDevice::tick()
                     sbuffer[i] = rbuffer[i];
                 sbuffer[5] = 6;             // length
                 sbufflen = 12;              // length of out buffer
-                bPtr[mb_ref] = sbuffer[10] * 256 + sbuffer[11];
+                regmap[mb_ref] = sbuffer[10] * 256 + sbuffer[11];
                 Serial.print("bPtr[");
                 Serial.print(mb_ref);
                 Serial.print("]=");
-                Serial.println(bPtr[mb_ref],HEX);
+                Serial.println(regmap[mb_ref],HEX);
                 rsend = true;
                 break;
             }

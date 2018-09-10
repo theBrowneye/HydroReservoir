@@ -26,19 +26,17 @@ void OneTemperature::tick()
 
     if (state == init)
     {
-
+        setBadValue(true, 0);
         if (!ds.search(addr))
         {
             ds.reset_search();
             delay(CommandDelay);
-            // pValue->updateBad();
             taskTimer.startTimer(FailedDelay);
             return;
         }
 
         if (OneWire::crc8(addr, 7) != addr[7])
         {
-            // pValue->updateBad();
             taskTimer.startTimer(FailedDelay);
             return;
         }
@@ -53,7 +51,6 @@ void OneTemperature::tick()
             type_s = 0;
             break;
         default:
-            // pValue->updateBad();
             return;
         }
         state = found;
@@ -109,12 +106,14 @@ void OneTemperature::tick()
         if (v > MaxLow && v < MaxHigh)
         {
             setValueflt((float)raw / 16.0, 0);
+            setBadValue(false, 0);
             taskTimer.startTimer(CommandDelay);
         }
         else
         {
             // pValue->updateBad();
             taskTimer.startTimer(FailedDelay);
+            setBadValue(true, 0);
         }
         state = read;
         return;
