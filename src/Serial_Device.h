@@ -27,14 +27,14 @@
 // #define   SERIAL_DEBUG
 enum PHFlags 
 {
-	Debug = 1 << 0,
-	Cal7 = 1 << 1,
-	Cal4 = 1 << 2,
-	Cal10 = 1 << 3,
-	DbgOn = 1 << 4,
-	DbgOff = 1 << 5,
-	PassOn = 1 << 6,
-	PassOff = 1 << 7
+	pDebug = 1 << 0,
+	pCal7 = 1 << 1,
+	pCal4 = 1 << 2,
+	pCal10 = 1 << 3,
+	pDbgOn = 1 << 4,
+	pDbgOff = 1 << 5,
+	pPassOn = 1 << 6,
+	pPassOff = 1 << 7
 };
 
 const int SerialTimeOut = 5000;
@@ -80,6 +80,34 @@ class PHSensor : public Measurement
 	// bool inCalibration;
 };
 
+// memory map definition
+// ! 5 ! 4 ! 3 ! 2 ! 1 ! 0 ! 9 ! 8 ! 7 ! 6 ! 5 ! 4 ! 3 ! 2 ! 1 ! 0 !
+// !---------------------------------------------------------------!
+// ! PV float word 1                                               !
+// ! PV float word 2                                               !
+// !---------------------------------------------------------------!
+// ! 0 - debug mode (send all traffic to console)
+// ! 1 - calibrate Z0 (reset after operation)
+// ! 2 - calibrate Z2 (reset after operation)
+// ! 3 - calibrate Z30 (reset after operation)
+// ! 4 - turn on debugging lights (reset after operation)
+// ! 5 - turn off debugging lights (reset after operation)
+// ! 6 - turn on passthrough (reset after operation)
+// ! 7 - turn off passthrough (reset after operation)
+
+// #define   SERIAL_DEBUG
+enum ECFlags 
+{
+	eDebug = 1 << 0,
+	eCalDry = 1 << 1,
+	eCal3000 = 1 << 2,
+	eCal220 = 1 << 3,
+	eDbgOn = 1 << 4,
+	eDbgOff = 1 << 5,
+	ePassOn = 1 << 6,
+	ePassOff = 1 << 7
+};
+
 class ECSensor : public Measurement
 {
   public:
@@ -88,7 +116,6 @@ class ECSensor : public Measurement
 		Read,
 		DebugOn,
 		DebugOff,
-		CalStart,
 		CalDry,
 		Cal3000,
 		Cal220
@@ -96,9 +123,6 @@ class ECSensor : public Measurement
 	ECSensor(HardwareSerial *id);
 	void tick();
 	void setMode();
-	int getMode();
-	const char *getModeString(int s);
-	int setTarget(int t);
 
   protected:
 	float temperature;
@@ -119,5 +143,5 @@ class ECSensor : public Measurement
 	int target;
 	int slen;
 	Timer water_throttle;
-	bool inCalibration;
+	bool debug;
 };

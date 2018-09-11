@@ -111,6 +111,13 @@ void ModbusDevice::restart()
 // process modem messages
 void ModbusDevice::tick()
 {
+    // allow things to be forced
+    // if (Serial.available())
+    // {
+    //     char c = Serial.read();
+    //     if (c == 'x') barometer += 5;
+    // }
+    
     // check barometer
     if (barometer >= BarometerFail) state = ModbusDevice::notConnected;
     if (barometer < 0) barometer = 0;
@@ -226,37 +233,37 @@ void ModbusDevice::tick()
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 03 ! byt! val! val!
             case 3:
                 mb_cnt = h_i8toi16(rbuffer[10], rbuffer[11]);
-                for (int i = 0; i < 12; i++)
+                for (int i = 0; i < 12; i++) {
                     sbuffer[i] = rbuffer[i];
+                }
                 sbuffer[5] = 3 + mb_cnt * 2; // length
                 sbuffer[8] = mb_cnt * 2;     // number of value bytes
                 sbufflen = 9 + mb_cnt * 2;   // length of out buffer
 
-                for (int i = 0; i < mb_cnt; i++)
-                {
-                    uint32_t uu = regmap[i + mb_ref];
+                // TODO: Add range checking on memory map calls
+                for (int i = 0; i < mb_cnt; i++) {
+                    uint16_t uu = regmap[i + mb_ref];
                     sbuffer[9 + i * 2] =  uu / 256;
                     sbuffer[10 + i * 2] = uu % 256;
                 }
 
                 rsend = true;
-
-                // Serial.print("fc3 ");
                 break;
 
             // FC16 - write multiple registers
-            // len-in = 12 + num * 2
+            // note that count is contained twice
+            // len-in = 13 + num * 2
             // len-out = 12
-            // TODO: test FC3 and FC16
             // map ! 00 ! 01 ! 02 ! 03 ! 04 ! 05 ! 06 ! 07 ! 08 ! 09 ! 10 ! 11 ! 12 ! 13 ! 14 ! 15
-            // in  ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L! VAL! VAL! ...
+            // in  ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L! cnt! VAL! VAL! ...
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un ! 16 ! R-H! R-L! C-H! C-L!
             case 16:
                 mb_cnt = h_i8toi16(rbuffer[10], rbuffer[11]);
-                for (int i = 0; i < 12; i++)
+                for (int i = 0; i < 12; i++) {
                     sbuffer[i] = rbuffer[i];
+                }
                 for (int i = 0; i < mb_cnt; i++) {
-                    regmap[mb_ref+i] = h_i8toi16(rbuffer[12+i*2], rbuffer[13+i*2]);
+                    regmap[mb_ref+i] = h_i8toi16(rbuffer[13+i*2], rbuffer[14+i*2]);
                     Serial.print("FC16[");
                     Serial.print(mb_ref+i);
                     Serial.print("]=");
@@ -273,8 +280,9 @@ void ModbusDevice::tick()
             // in  ! id ! id ! 00 ! 00 ! 00 ! len! un !  6 ! R-H! R-L! VAL! VAL!
             // out ! id ! id ! 00 ! 00 ! 00 ! len! un !  6 ! R-H! R-L! VAL! VAL!
             case 6:
-                for (int i = 0; i < 12; i++)
+                for (int i = 0; i < 12; i++) {
                     sbuffer[i] = rbuffer[i];
+                }
                 regmap[mb_ref] = h_i8toi16(rbuffer[10], rbuffer[11]);
                 Serial.print("FC6[");
                 Serial.print(mb_ref);
@@ -344,7 +352,7 @@ void ModbusDevice::tick()
             status = memtoi(l);
             // any other status than 3 means it's not fully connected
             if (status > 5) {             // skip extended diagnostic
-            } else if (status != 3) {
+            } else if (status == 5 || status < 3) {
                 barometer++;
             } else {
                 barometer--;

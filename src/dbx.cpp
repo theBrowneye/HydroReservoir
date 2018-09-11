@@ -96,7 +96,7 @@ int dbxMenu::getMenuSize()
     return screens[setPosition][0];
 }
 
-uint16_t h_i8toi16(uint8_t l, uint8_t h)
+uint16_t h_i8toi16(uint8_t h, uint8_t l)
 {
     uint16_t r = h;
     return r * 256 + l;

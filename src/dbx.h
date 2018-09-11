@@ -10,7 +10,7 @@
 // TODO: Work out how to automatically update this item from the memory map configuration
 
 // helper functions for converting between data types
-uint16_t h_i8toi16(uint8_t l, uint8_t h);
+uint16_t h_i8toi16(uint8_t, uint8_t);
 
 // http://www.mathcs.emory.edu/~cheung/Courses/255/Syllabus/1-C-intro/bit-array.html
 class BitVector
