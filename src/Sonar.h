@@ -5,6 +5,7 @@
 #include "Measurement.h"
 #include "ConeShed.h"
 #include "NewPing.h"
+#include "MedianFilter.h"
 
 // TODO: add code to skip eratic changes
 
@@ -23,4 +24,5 @@ private:
   float wt;
   float filter;
   float span, offset;
+  FastRunningMedian<unsigned int, 32, 0> medianFilter;
 };

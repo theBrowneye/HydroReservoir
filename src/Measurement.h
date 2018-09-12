@@ -24,19 +24,23 @@ class Measurement
     void setValuePtr(uint16_t b)
     {
         base = b;
-    };
+    }
     void setValueflt(float f, uint16_t offset)
     {
         regmap.setValueFlt(base + offset, f);
-    };
+    }
     void setValueInt(uint16_t f, uint16_t offset)
     {
         regmap.setValueInt(base + offset, f);
-    };
+    }
     uint16_t getValueInt(uint16_t offset)
     {
         return regmap.getValueInt(base + offset);
-    };
+    }
+    float getValueFlt(uint16_t offset)
+    {
+        return regmap.getValueFlt(base + offset);
+    }
     void setBadValue(bool b, uint16_t offset)
     {
         regmap.setBadValue(base + offset, b);

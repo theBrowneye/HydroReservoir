@@ -21,13 +21,9 @@ int ModbusDevice::getState()
 }
 
 // TODO: implement error checking
-// establish communications to access point
 // TODO: implement connect and other long routines with timer controls (expect object??)
-// TODO: Add sensor to show if we are connected, and perhaps if there are any problems that need to be fixed
-// TODO: implement state machine for connections to prevent app from hanging on connect
-// TODO: implement better diagnostics to see what's happening during connect issues
-// TODO: don't reconnect unnecessarily - check connect status in diag call isntead of forcing new connection
 
+// don't issue diagnostics until a period of silence
 // if connectStrength == true then force a device reset
 bool ModbusDevice::connect(bool connectStrength)
 {
@@ -320,6 +316,7 @@ void ModbusDevice::tick()
         {
             sd.write(sbuffer, sbufflen);
             setValueInt(callsTotal++, 0);
+            diagTimer.startTimer(diagTimeOut);      // 
             restart();
         }
     }
@@ -341,7 +338,6 @@ void ModbusDevice::tick()
         }
     }
 
-    // looking for "STATUS:3" to show connected OK
     // STATUS:3
     // STATUS:0,"TCP","192.168.1.99",54528,502,1
     if (state == ModbusDevice::d3 && rbufflen >= 1)
