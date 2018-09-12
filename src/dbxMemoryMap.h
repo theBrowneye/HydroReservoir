@@ -12,7 +12,6 @@ const uint16_t dbCycleTime = 25;
 const uint16_t dbRunTime = 27;
 const uint16_t dbModBus = 29;
 const uint16_t dbSystemFlags = 33;
-const uint16_t dbxMemorySize = 36; 
 
 // dbxMemMap mem[] = {
 //     /* empty */ 
@@ -37,5 +36,7 @@ const uint16_t dbxMemorySize = 36;
 //     /* 40033 */ {dbSystemFlags + 0, dbxMemMap::t16, "Power on restarts"}
 //     /* 40034 */ {dbSystemFlags + 1, dbxMemMap::t16, "Interrupt restarts"}
 //     /* 40035 */ {dbSystemFlags + 2, dbxMemMap::t16, "System flags"}
-//     /* 40036    ***** END OF MAP ****/
+//     /* 40036 */ {dbSystemFlags + 3, dbxMemMap::t16, "Save retained vars"}
+//     /* 40037    ***** END OF MAP ****/
+const uint16_t dbxMemorySize = 37; 
 // };

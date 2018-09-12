@@ -130,7 +130,12 @@ void setup()
 	sys.setValuePtr(dbSystemFlags);
 
 	// restore saved information
-	// mm.readFromFlash();
+	regmap.setRetained(dbSonar + 4);
+	regmap.setRetained(dbSonar + 5);
+	regmap.setRetained(dbSonar + 6);
+	regmap.setRetained(dbSonar + 7);
+	if (!regmap.loadRetainedValues())
+		Serial.println("Error loading retained");
 
 	// set up UI objects
 	enc.begin();

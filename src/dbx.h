@@ -46,6 +46,7 @@ class dbxRegisters
 	dbxRegisters();
 	uint16_t reg[dbxMemorySize];
 	bool badValue[dbxMemorySize];
+	bool retained[dbxMemorySize];
 
   public:
 	float getValueFlt(uint16_t offset);
@@ -54,6 +55,10 @@ class dbxRegisters
 	void setValueInt(uint16_t offset, uint16_t v);
 	bool isBadValue(uint16_t offset);
 	void setBadValue(uint16_t offset, bool b = true);
+	bool isRetained(uint16_t offset);
+	void setRetained(uint16_t offset, bool b = true);
+	bool saveRetainedValues();
+	bool loadRetainedValues();
 	String asStringF(uint16_t offset, unsigned char spec);
 	String asStringI(uint16_t offset, unsigned char spec);
 	uint16_t* getRegMap();
