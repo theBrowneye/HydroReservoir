@@ -70,6 +70,7 @@ void PHSensor::tick()
 	if (state == init)
 	{
 		device->begin(38400);
+		device->write("L0\r");
 		state = write;
 	}
 
@@ -221,6 +222,7 @@ void ECSensor::tick()
 	{
 		device->begin(38400);
 		device->write("P,1\r");
+		device->write("L0\r");
 		state = write;
 	}
 

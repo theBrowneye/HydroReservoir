@@ -98,11 +98,11 @@ Bounce encBtn;
 HONSensor hon_sensor(honID);
 CycleTime cycleTime;
 RunTime runTime;
-Timer menu_timer;
 U8X8_SSD1306_128X64_ALT0_HW_I2C u8x8(/* reset=*/U8X8_PIN_NONE); // oled on standard I2C pins
 Sonar ms(dstTrig, dstEcho, dstMaxDistance);
 ModbusDevice mb(mbSerial);
 SystemVars sys;
+Timer menu_timer;
 
 // the setup routine runs once when you press reset:
 void setup()
@@ -139,7 +139,7 @@ void setup()
 
 	// set up UI objects
 	enc.begin();
-	enc.setMenuRange(10); 
+	enc.setMenuRange(7); 
 	u8x8.setFont(u8x8_font_amstrad_cpc_extended_f);
 	u8x8.clear();
 
@@ -187,7 +187,6 @@ void loop()
 // process menu and displays
 void Menu_Show(int menuPos, bool b)
 {
-	bool action = !b;
 	static int lastMenu = -1;
 	if (lastMenu != menuPos)
 	{
@@ -198,24 +197,7 @@ void Menu_Show(int menuPos, bool b)
 	switch (menuPos)
 	{
 	case 0:
-		u8x8.setCursor(0, 0);
-		u8x8.print("Water Quality");
-
-		u8x8.setCursor(0, 1);
-		u8x8.print("  ph:");
-		u8x8.print(regmap.asStringF(dbPHSensor, 1));
-		u8x8.print("  ");
-
-		u8x8.setCursor(0, 2);
-		u8x8.print("  ec:");
-		u8x8.print(regmap.asStringF(dbECSensor, 0));
-		u8x8.print("  ");
-
-		u8x8.setCursor(0, 3);
-		u8x8.print("temp:");
-		u8x8.print(regmap.asStringF(dbWatTemp, 1));
-		u8x8.print("  ");
-
+		u8x8.clear();
 		break;
 
 	case 1:
@@ -242,6 +224,41 @@ void Menu_Show(int menuPos, bool b)
 
 	case 2:
 		u8x8.setCursor(0, 0);
+		u8x8.print("Water Quality");
+
+		u8x8.setCursor(0, 1);
+		u8x8.print("  ph:");
+		u8x8.print(regmap.asStringF(dbPHSensor, 1));
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 2);
+		u8x8.print("  ec:");
+		u8x8.print(regmap.asStringF(dbECSensor, 0));
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 3);
+		u8x8.print(" lvl:");
+		u8x8.print(regmap.asStringF(dbSonar + 2, 0));
+		u8x8.print("  ");
+		break;
+
+	case 3:
+		u8x8.setCursor(0, 0);
+		u8x8.print("Water Tank");
+
+		u8x8.setCursor(0, 1);
+		u8x8.print("temp:");
+		u8x8.print(regmap.asStringF(dbWatTemp, 1));
+		u8x8.print("  ");
+
+		u8x8.setCursor(0, 2);
+		u8x8.print(" lvl:");
+		u8x8.print(regmap.asStringF(dbSonar + 2, 0));
+		u8x8.print("  ");
+		break;
+
+	case 4:
+		u8x8.setCursor(0, 0);
 		u8x8.print("Environment");
 
 		u8x8.setCursor(0, 1);
@@ -260,7 +277,7 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("  ");
 		break;
 
-	case 3:
+	case 5:
 		u8x8.setCursor(0, 0);
 		u8x8.print("Sonar");
 
@@ -280,7 +297,7 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("  ");
 		break;
 
-	case 4:
+	case 6:
 		u8x8.setCursor(0, 0);
 		u8x8.print("System");
 
@@ -300,23 +317,7 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("  ");
 		break;
 
-	case 5:
-		u8x8.setCursor(0, 0);
-		u8x8.print("Water Tank");
-
-		u8x8.setCursor(0, 1);
-		u8x8.print("temp:");
-		u8x8.print(regmap.asStringF(dbWatTemp, 1));
-		u8x8.print("  ");
-
-		u8x8.setCursor(0, 2);
-		u8x8.print(" lvl:");
-		u8x8.print(regmap.asStringF(dbSonar + 2, 0));
-		u8x8.print("  ");
-
-		break;
-
-	case 6:
+	case 7:
 		u8x8.setCursor(0, 0);
 		u8x8.print("System");
 
@@ -334,7 +335,6 @@ void Menu_Show(int menuPos, bool b)
 		u8x8.print("flag:");
 		u8x8.print(regmap.getValueInt(dbSystemFlags + 2), HEX);
 		u8x8.print("  ");
-
 		break;
 
 	default:
