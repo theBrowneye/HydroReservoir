@@ -15,26 +15,31 @@
 // ! PV float word 1                                               !
 // ! PV float word 2                                               !
 // !---------------------------------------------------------------!
-// ! 0 - debug mode (send all traffic to console)
-// ! 1 - calibrate 7 (reset after operation)
-// ! 2 - calibrate 4 (reset after operation)
-// ! 3 - calibrate 10 (reset after operation)
-// ! 4 - turn on debugging lights (reset after operation)
-// ! 5 - turn off debugging lights (reset after operation)
-// ! 6 - turn on passthrough (reset after operation)
-// ! 7 - turn off passthrough (reset after operation)
+// ! PH control word (reset to zero after operation)               !
+// !---------------------------------------------------------------!
+// ! 0 - nop
+// ! 1 - debug on
+// ! 2 - debug off
+// ! 3 - calibrate 7 (reset after operation)
+// ! 4 - calibrate 4 (reset after operation)
+// ! 5 - calibrate 10 (reset after operation)
+// ! 6 - turn on debugging lights (reset after operation)
+// ! 7 - turn off debugging lights (reset after operation)
+// ! 8 - turn on passthrough (reset after operation)
+// ! 9 - turn off passthrough (reset after operation)
 
 // #define   SERIAL_DEBUG
 enum PHFlags 
 {
-	pDebug = 1 << 0,
-	pCal7 = 1 << 1,
-	pCal4 = 1 << 2,
-	pCal10 = 1 << 3,
-	pDbgOn = 1 << 4,
-	pDbgOff = 1 << 5,
-	pPassOn = 1 << 6,
-	pPassOff = 1 << 7
+	pDebugOn = 1,
+	pDebugOff = 2,
+	pCal7 = 3,
+	pCal4 = 4,
+	pCal10 = 5,
+	pDbgOn = 6,
+	pDbgOff = 7,
+	pPassOn = 8,
+	pPassOff = 9
 };
 
 const int SerialTimeOut = 5000;
@@ -86,26 +91,31 @@ class PHSensor : public Measurement
 // ! PV float word 1                                               !
 // ! PV float word 2                                               !
 // !---------------------------------------------------------------!
-// ! 0 - debug mode (send all traffic to console)
-// ! 1 - calibrate Z0 (reset after operation)
-// ! 2 - calibrate Z2 (reset after operation)
-// ! 3 - calibrate Z30 (reset after operation)
-// ! 4 - turn on debugging lights (reset after operation)
-// ! 5 - turn off debugging lights (reset after operation)
-// ! 6 - turn on passthrough (reset after operation)
-// ! 7 - turn off passthrough (reset after operation)
+// ! EC control word (reset to zero after operation)               !
+// !---------------------------------------------------------------!
+// ! 0 - NOP
+// ! 1 - debug on
+// ! 2 - debug off
+// ! 3 - calibrate Z0 (reset after operation)
+// ! 4 - calibrate Z2 (reset after operation)
+// ! 5 - calibrate Z30 (reset after operation)
+// ! 6 - turn on debugging lights (reset after operation)
+// ! 7 - turn off debugging lights (reset after operation)
+// ! 8 - turn on passthrough (reset after operation)
+// ! 9 - turn off passthrough (reset after operation)
 
 // #define   SERIAL_DEBUG
 enum ECFlags 
 {
-	eDebug = 1 << 0,
-	eCalDry = 1 << 1,
-	eCal3000 = 1 << 2,
-	eCal220 = 1 << 3,
-	eDbgOn = 1 << 4,
-	eDbgOff = 1 << 5,
-	ePassOn = 1 << 6,
-	ePassOff = 1 << 7
+	eDebugOn = 1,
+	eDebugOff = 2,
+	eCalDry = 3,
+	eCal3000 = 4,
+	eCal220 = 5,
+	eDbgOn = 6,
+	eDbgOff = 7,
+	ePassOn = 8,
+	ePassOff = 9
 };
 
 class ECSensor : public Measurement

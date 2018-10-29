@@ -25,44 +25,52 @@ void PHSensor::setMode()
 	command = PHCommands::Read;
 
 	// check resetable flags
-	if (flags & PHFlags::pDbgOn)
+	switch (flags)
 	{
-		command = PHCommands::DebugOn;
-		state = write;
-	}
-	else if (flags & PHFlags::pDbgOff)
-	{
-		command = PHCommands::DebugOff;
-		state = write;
-	}
-	else if (flags & PHFlags::pPassOn)
-	{
-		state = passthrough;
-	}
-	else if (flags & PHFlags::pPassOff)
-	{
-		command = PHCommands::Read;
-		state = write;
-	}
-	else if (flags & PHFlags::pCal7)
-	{
-		command = PHCommands::Cal7;
-		state = write;
-	}
-	else if (flags & PHFlags::pCal4)
-	{
-		command = PHCommands::Cal4;
-		state = write;
-	}
-	else if (flags & PHFlags::pCal10)
-	{
-		command = PHCommands::Cal10;
-		state = write;
-	}
+		case PHFlags::pDbgOn:
+			command = PHCommands::DebugOn;
+			state = write;
+			break;
 
-	flags &= PHFlags::pDebug;	
-	debug = (flags != 0);	
-	setValueInt(flags, 2);
+		case PHFlags::pDbgOff:
+			command = PHCommands::DebugOff;
+			state = write;
+			break;
+		
+		case PHFlags::pPassOn:
+			state = passthrough;
+			break;
+
+		case PHFlags::pPassOff:
+			command = PHCommands::Read;
+			state = write;
+			break;
+
+		case PHFlags::pCal7:
+			command = PHCommands::Cal7;
+			state = write;
+			break;
+
+		case PHFlags::pCal4:
+			command = PHCommands::Cal4;
+			state = write;
+			break;
+
+		case PHFlags::pCal10:
+			command = PHCommands::Cal10;
+			state = write;
+			break;
+
+		case PHFlags::pDebugOn:
+			debug = true;
+			break;
+
+		case PHFlags::pDebugOff:
+			debug = false;
+			break;
+
+	}
+	setValueInt(flags = 0, 2);
 };
 
 void PHSensor::tick()
@@ -175,45 +183,51 @@ void ECSensor::setMode()
 	uint16_t flags = getValueInt(2);
 	command = ECCommands::Read;
 
-	// check resetable flags
-	if (flags & ECFlags::eDbgOn)
+	switch (flags)
 	{
-		command = ECCommands::DebugOn;
-		state = write;
-	}
-	else if (flags & ECFlags::eDbgOff)
-	{
-		command = ECCommands::DebugOff;
-		state = write;
-	}
-	else if (flags & ECFlags::ePassOn)
-	{
-		state = passthrough;
-	}
-	else if (flags & ECFlags::ePassOff)
-	{
-		command = ECCommands::Read;
-		state = write;
-	}
-	else if (flags & ECFlags::eCalDry)
-	{
-		command = ECCommands::CalDry;
-		state = write;
-	}
-	else if (flags & ECFlags::eCal3000)
-	{
-		command = ECCommands::Cal3000;
-		state = write;
-	}
-	else if (flags & ECFlags::eCal220)
-	{
-		command = ECCommands::Cal220;
-		state = write;
-	}
+		case ECFlags::eDbgOn:
+			command = ECCommands::DebugOn;
+			state = write;
+			break;
 
-	flags &= ECFlags::eDebug;	
-	debug = (flags != 0);	
-	setValueInt(flags, 2);
+		case ECFlags::eDbgOff:
+			command = ECCommands::DebugOff;
+			state = write;
+			break;
+
+		case ECFlags::ePassOn:
+			state = passthrough;
+			break;
+
+		case ECFlags::ePassOff:
+			command = ECCommands::Read;
+			state = write;
+			break;
+
+		case ECFlags::eCalDry:
+			command = ECCommands::CalDry;
+			state = write;
+			break;
+
+		case ECFlags::eCal3000:
+			command = ECCommands::Cal3000;
+			state = write;
+			break;
+
+		case ECFlags::eCal220:
+			command = ECCommands::Cal220;
+			state = write;
+			break;
+
+		case ECFlags::eDebugOn:
+			debug = true;
+			break;
+
+		case ECFlags::eDebugOff:
+			debug = false; 
+			break;
+	}
+	setValueInt(flags = 0, 2);
 }
 
 void ECSensor::tick()
